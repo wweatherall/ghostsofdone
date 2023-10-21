@@ -1,0 +1,33 @@
+baseurl: "/githubpages"
+
+
+collections:
+  authors:
+    output: true
+  soccer:
+    output: true
+
+defaults:
+  - scope:
+      path: ""
+      type: "authors"
+    values:
+      layout: "author"
+  - scope:
+      path: "{{ site.baseurl }}"
+      type: "posts"
+    values:
+      layout: "post"
+  - scope:
+      path: ""
+    values:
+      layout: "default"
+  - scope:
+      path: ""
+    values:
+      layout: "default"
+
+
+plugins:
+  - jekyll-feed
+  - jekyll-sitemap
