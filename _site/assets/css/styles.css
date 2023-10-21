@@ -67,13 +67,13 @@ a:active {
   padding: 3rem;
 }
 
-.navenuList {
+.navMenuList {
   transition-property: font-size;
   transition-duration: 4s;
   transition-delay: 2s;
 }
 
-.navenuList:active {
+.navMenuList:active {
   transform: translate(5px, 5px);
   font-size: 56pt;
 }
@@ -82,7 +82,7 @@ ul {
   list-style: none;
 }
 
-.navenu {
+.navMenu {
   float: left;
   width: 30%;
   text-align: right;
@@ -92,7 +92,7 @@ ul {
   font-size: 30px;
 }
 
-.navenuHeading a {
+.navMenuHeading a {
   color: var(--navColour);
   /* TO MAKE THE BACKGROUND HIGHLIGHT COVER ENOUGH AREA */
   padding-left: 3px;
@@ -105,20 +105,20 @@ ul {
   filter: drop-shadow(5px 5px);
 }
 
-.navenuDropdown {
+.navMenuDropdown {
   display: none;
   line-height: 1.2;
   font-size: 25px;
 }
 
-.navenuCurrentPage {
+.navMenuCurrentPage {
   display: block;
   line-height: 1.2;
   font-size: 25px;
   color: white;
 }
 
-.navenuCurrentSport a {
+.navMenuCurrentSport a {
   padding-left: 5px;
   padding-right: 5px;
   padding-bottom: 3px;
@@ -130,11 +130,11 @@ ul {
   color: black !important;
 }
 
-.navenuDropdown a {
+.navMenuDropdown a {
   color: white;
 }
 
-.navenuHeading:hover > .navenuDropdown, .active {
+.navMenuHeading:hover > .navMenuDropdown, .active {
   display: block;
 }
 
@@ -145,22 +145,22 @@ ul {
 
 @media only screen and (max-width: 800px) {
   /* For tablets: */
-  .navenu, .content, .rightMenu {
+  .navMenu, .content, .rightMenu {
     width: 100%;
   }
-  .navenu, .rightMenu {
+  .navMenu, .rightMenu {
     text-align: center;
   }
-  .navenuList {
+  .navMenuList {
     display: inline-block;
   }
 }
 @media only screen and (max-width: 500px) {
   /* For tablets: */
-  .navenu, .content, .rightMenu, .contentLeft, .contentRight {
+  .navMenu, .content, .rightMenu, .contentLeft, .contentRight {
     width: 100%;
   }
-  .navenu, .rightMenu {
+  .navMenu, .rightMenu {
     text-align: center;
     display: block;
   }
@@ -169,7 +169,7 @@ ul {
   }
 }
 /* MAKES THE COLOR CHANGE AFFECT THE PARENT AS WELL
-.navenu li:hover > a {
+.navMenu li:hover > a {
   background-color: #ddd;
   color: black;
 }*/

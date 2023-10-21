@@ -12,11 +12,15 @@ U-13 is for players born in
 
 - [ ] This is a test of this part
 
+This si the javascript stuff
+
 <script>document.write(new Date().getFullYear()-13);</script>
 
 and <script>document.write(new Date().getFullYear()-12);</script>.
 <p><script>document.write( new Date().getFullYear() );</script>
     <script type="text/javascript">document.write( new Date().getFullYear() );</script></p>
+This is the javascript stuff
+
 
 I hope this works.
 

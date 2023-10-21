@@ -1,9 +1,9 @@
-<nav class="navenu">
+<nav class="navMenu">
 
-    <ul class="navenuHeading">
+    <ul class="navMenuHeading">
         {% for item in site.data.navigation %}
-        <li class="navenuList buttonTop"><a href="{{site.baseurl}}{{ item.link }}" {% if page.url==item.link %}class="current"
-                {% endif %}>{{ item.name
+        <li class="navMenuList buttonTop"><a href="{{site.baseurl}}{{ item.link }}" {% if page.url==item.link
+                %}class="current" {% endif %}>{{ item.name
                 }}</a></li>
         {% endfor %}
     </ul>
