@@ -1,3 +1,17 @@
+:root {
+    --backgroundColour: #ddd;
+    --textColour: #000;
+    --accentColour: #aaa;
+}
+
+@media (prefers-color-scheme: dark){
+    :root {
+        --backgroundColour: #000;
+        --textColour: #ddd;
+        --accentColour: #f00;
+}
+}
+
 .current {
 color: green;
 }
@@ -7,13 +21,15 @@ color: green;
   padding: 0;
   margin: 0;
   font-family: Verdana;
-    color: #ddd;
+;
 
 }
 
 html {
-  background-color: #232323;
+  background-color: var(--backgroundColour);
+  color: var(--textColour);
   max-width: 1300px;
+
 
   /* REMOVE IF NOTHING GOES WRONG: margin: 0 auto; */
 }
@@ -21,6 +37,15 @@ html {
 a {
   text-decoration: none;
   font-weight: bold;
+}
+
+a:visited {
+    color: var(--accentColour);
+}
+
+a:hover {
+    background-color: var(--accentColour);
+    color: var(--textColour);
 }
 
 ul {
@@ -108,7 +133,6 @@ h3 {
 
 
 .content {
-  color: #f1f1f1;
   float: left;
   width: 50%;
   line-height: 1.4;
