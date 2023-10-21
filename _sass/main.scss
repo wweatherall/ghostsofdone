@@ -1,14 +1,23 @@
 :root {
     --backgroundColour: #ddd;
     --textColour: #000;
+    --navColour: #000;
     --accentColour: #aaa;
+    --hovNavColour: #aaa;
+    --titleFontFamily: "Adobe Garamond Pro" ;
+    --bodyFontFamily: "Adobe Garamond Pro";
 }
 
 @media (prefers-color-scheme: dark){
     :root {
-        --backgroundColour: #000;
-        --textColour: #ddd;
-        --accentColour: #f00;
+        --backgroundColour: #222;
+        --textColour: #f22;
+        --navColour: #f00;
+        --accentColour: #ddd;
+        --hovNavColour: #400;
+        --titleFontFamily: "SF Mono";
+        --titleFontFamilyBackup: monospace;
+        --bodyFontFamily: "SF Mono";
 }
 }
 
@@ -20,7 +29,7 @@ color: green;
   box-sizing: border-box;
   padding: 0;
   margin: 0;
-  font-family: Verdana;
+  font-family: var(--bodyFontFamily);
 ;
 
 }
@@ -38,9 +47,7 @@ a {
   text-decoration: none;
   background-color: var(--backgroundColour);
   font-weight: bold;
-  border: solid;
-  border-radius: 12px;
-  filter: drop-shadow(5px 5px);
+  padding: 1rem;
 }
 
 a:visited {
@@ -48,7 +55,7 @@ a:visited {
 }
 
 a:hover {
-    background-color: var(--accentColour);
+    background-color: var(--hovNavColour);
     color: var(--textColour);
 }
 
@@ -57,96 +64,71 @@ a:active {
     filter: drop-shadow(1px 1px);
 }
 
-.leftMenuList {
+.title {
+	font-family: var(--titleFontFamily), "Adobe Caslon Pro", Times, "Lucida Grande", "Courier New";
+	font-size: 80pt;
+	font-weight: bold;
+	text-align: center;
+	padding: 3rem;
+}
+
+
+.navenuList {
   transition-property: font-size;
   transition-duration: 4s;
   transition-delay: 2s;
-  display: inline-block;
 }
 
-.leftMenuList:active {
+.navenuList:active {
     transform: translate(5px, 5px);
     font-size: 56pt;
-}
-
-.box {
-  border-style: solid;
-  border-width: 1px;
-  display: block;
-  width: 100px;
-  height: 100px;
-  background-color: #0000ff;
-  transition:
-    width 2s,
-    height 2s,
-    background-color 2s,
-    rotate 2s;
-}
-
-.box:active {
-  background-color: #ffcccc;
-  width: 200px;
-  height: 200px;
-  rotate: 180deg;
 }
 
 ul {
   list-style: none;
 }
 
-h3 {
-  padding: 3;
-}
 
-/*h3:hover {
-  background-color: #ddd;
-}*/
 
-/* THE LOGO AREA AT THE TOP */
-.banner {
-  width: 100%;
-  max-width: 600px;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-.leftMenu {
+.navenu {
   float: left;
   width: 30%;
   text-align: right;
-  color: #FC7223;
+  color: var(--accentColour);
   line-height: 1.8;
   font-weight: bold;
   font-size: 30px;
 }
 
-.leftMenuHeading a {
-  color: #FC7223;
+.navenuHeading a {
+  color: var(--navColour);
 
   /* TO MAKE THE BACKGROUND HIGHLIGHT COVER ENOUGH AREA */
-  padding-left: 5px;
-  padding-right: 5px;
+  padding-left: 3px;
+  padding-right: 3px;
   padding-bottom: 3px;
+  margin-bottom: 5px;
+  width: 200px;
+  border: solid;
+  border-radius: 5px;
+  filter: drop-shadow(5px 5px);
 }
 
-.leftMenuHeading li:hover {
-  background-color: #ddd;
-}
 
-.leftMenuDropdown {
+.navenuDropdown {
   display: none;
   line-height: 1.2;
   font-size: 25px;
 }
 
-.leftMenuCurrentPage {
+.navenuCurrentPage {
   display:block;
   line-height: 1.2;
   font-size: 25px;
   color: white;
 }
 
-.leftMenuCurrentSport a {
+.navenuCurrentSport a {
   padding-left: 5px;
   padding-right: 5px;
   padding-bottom: 3px;
@@ -158,150 +140,58 @@ h3 {
   color: black !important;
 }
 
-.leftMenuDropdown a {
+.navenuDropdown a {
   color: white;
 }
 
-.leftMenuHeading:hover > .leftMenuDropdown, .active{
+.navenuHeading:hover > .navenuDropdown, .active{
   display: block;
 }
 
 
-.leftMenuList li:hover > a {
-  background-color: #ddd;
-  color: black;
+
+.bottonTop {
+	min-width: 200px;
+	border: solid;
 }
 
-
-
-.content {
-  float: left;
-  width: 50%;
-  line-height: 1.4;
-  padding: 23px;
-}
-
-.content p {
-  margin-bottom: 1em;
-  text-align: justify;
-}
-
-.content h2 {
-  margin-bottom: .5em;
-}
-
-.contentLeft {
-  width: calc((100% - 260px));
-  min-width: 100px;
-  max-width: 100%;
-  float: left;
-}
-
-.contentLeft p {
-    text-align: left;
-    font-size: 11pt;
-}
-
-.contentRight {
-  width: 250px;
-  float: right;
-  padding-left: auto;
-}
-
-.contentRight h3:hover{
-  background-color: inherit;
-
-}
-
-.rightMenu {
-  background-color: #FC7223;
-  float: left;
-  width: 25%;
-  padding: 10px 15px;
-  font-size: 20px;
-  margin-top: 7px;
-
-}
-
-.rightMenu a {
-  color: black;
-  text-decoration: none;
-  list-style: none;
-}
-
-.rightMenuHeading {
-  padding: 4px;
-}
-
-
-input[type='checkbox'] { display: none; }
-
-.wrap-collabsible { margin: 1.2rem 0; }
-
-.lbl-toggle { display: block; font-weight: bold; font-family: sans-serif; font-weight: bold; font-size: 18pt; text-transform: uppercase; text-align: center; padding: 1rem; color: black; background: #FC7223; cursor: pointer; border-radius: 0px; transition: all 0.25s ease-out; }
-
-.lbl-toggle:hover { color: #FFF; }
-
-.lbl-toggle::before { content: ' '; display: inline-block; border-top: 5px solid transparent; border-bottom: 5px solid transparent; border-left: 5px solid currentColor; vertical-align: middle; margin-right: .7rem; transform: translateY(-2px); transition: transform .2s ease-out; }
-
-.toggle:checked+.lbl-toggle::before { transform: rotate(90deg) translateX(-3px); } .collapsible-content { max-height: 0px; overflow: hidden; transition: max-height .25s ease-in-out; }
-
-.toggle:checked + .lbl-toggle + .collapsible-content { max-height: 9000px; }
-
-.toggle:checked+.lbl-toggle { border-bottom-right-radius: 0; border-bottom-left-radius: 0; } .collapsible-content
-
-.content-inner {color: white; font-size: 10pt; background: #444444; border-bottom: 1px solid #000000; border-bottom-left-radius: 0px; border-bottom-right-radius: 0px; padding: .5rem 1rem; }
-
-.content-inner ul {list-style: square; margin-left: 10px;}
-
-.content-inner li {margin-bottom: 10px;}
-
-.content-inner em {font-size: 12pt;}
-
-.collapsible-content p { margin-bottom: 0; }
-
-.contentInnerButton {
-  margin: auto;
-  width: 80%;
-  background-color: #FC7223;
-  text-align: center;
-  color: black;
-  text-transform: capitalize;
-  font-weight: bold;
-  font-size: 13pt;
-}
-
-.contentInnerButton:hover {
-  background-color: #ddd;
-}
 
 
 @media only screen and (max-width:800px) {
 /* For tablets: */
-.leftMenu, .content, .rightMenu {
+.navenu, .content, .rightMenu {
   width: 100%;
 }
 
-.leftMenu, .rightMenu {
+.navenu, .rightMenu {
   text-align: center;
+}
+
+.navenuList {
+  display: inline-block;
 }
 
 }
 
 @media only screen and (max-width:500px) {
 /* For tablets: */
-.leftMenu, .content, .rightMenu, .contentLeft, .contentRight {
+.navenu, .content, .rightMenu, .contentLeft, .contentRight {
   width: 100%;
 }
 
-.leftMenu, .rightMenu {
+.navenu, .rightMenu {
   text-align: center;
+  display: block;
+}
+
+.title {
+	font-size: 46pt;
 }
 
 }
 
 /* MAKES THE COLOR CHANGE AFFECT THE PARENT AS WELL
-.leftMenu li:hover > a {
+.navenu li:hover > a {
   background-color: #ddd;
   color: black;
 }*/

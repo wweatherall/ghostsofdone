@@ -1,10 +1,11 @@
-<nav class="leftMenu">
+<nav class="navenu">
 
-    <ul class="leftMenuHeading">
+    <ul class="navenuHeading">
         {% for item in site.data.navigation %}
-        <li class="leftMenuList"><a href="{{site.baseurl}}{{ item.link }}" {% if page.url==item.link %}class="current"
+        <li class="navenuList buttonTop"><a href="{{site.baseurl}}{{ item.link }}" {% if page.url==item.link %}class="current"
                 {% endif %}>{{ item.name
                 }}</a></li>
         {% endfor %}
     </ul>
+    <div class="buttonTop"><a href="#">This</a></div>
 </nav>

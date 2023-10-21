@@ -20,6 +20,15 @@ and <script>document.write(new Date().getFullYear()-12);</script>.
 
 I hope this works.
 
+Will safari detect the change?
+
+Did it
+
+They both do apparently
+
+But not with CSS
+
+
 Does this make a dif
 
 $$ \pi r^2 $$
