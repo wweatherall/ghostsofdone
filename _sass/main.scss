@@ -36,7 +36,11 @@ html {
 
 a {
   text-decoration: none;
+  background-color: var(--backgroundColour);
   font-weight: bold;
+  border: solid;
+  border-radius: 12px;
+  filter: drop-shadow(5px 5px);
 }
 
 a:visited {
@@ -46,6 +50,44 @@ a:visited {
 a:hover {
     background-color: var(--accentColour);
     color: var(--textColour);
+}
+
+a:active {
+    transform: translate(15px);
+    filter: drop-shadow(1px 1px);
+}
+
+.leftMenuList {
+  transition-property: font-size;
+  transition-duration: 4s;
+  transition-delay: 2s;
+  display: inline-block;
+}
+
+.leftMenuList:active {
+    transform: translate(5px, 5px);
+    font-size: 56pt;
+}
+
+.box {
+  border-style: solid;
+  border-width: 1px;
+  display: block;
+  width: 100px;
+  height: 100px;
+  background-color: #0000ff;
+  transition:
+    width 2s,
+    height 2s,
+    background-color 2s,
+    rotate 2s;
+}
+
+.box:active {
+  background-color: #ffcccc;
+  width: 200px;
+  height: 200px;
+  rotate: 180deg;
 }
 
 ul {
