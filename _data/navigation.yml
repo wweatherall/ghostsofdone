@@ -1,7 +1,7 @@
 - name: Home
   link: /
 - name: Archive
-  link: archive.html
+  link: /archive.html
 - name: About
   link: /about.html
 - name: Blog
