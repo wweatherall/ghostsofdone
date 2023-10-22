@@ -52,11 +52,11 @@ html {
 }
 
 .title a {
-color: inherit;
+    color: inherit;
 }
 
 .title a:visited {
-color: inherit;
+    color: inherit;
 }
 
 
@@ -163,6 +163,11 @@ article {
 
 }
 
+iframe {
+    max-width: 90%;
+    padding: 5%;
+}
+
 @media only screen and (max-width:800px) {
 
     /* For tablets: */
@@ -209,7 +214,7 @@ nav ul li a {
         font-size: 46pt;
     }
 
-	
+
 
 }
 
