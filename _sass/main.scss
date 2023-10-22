@@ -1,24 +1,26 @@
 :root {
     --backgroundColour: #ddd;
+    --titleColour: #000;
     --textColour: #000;
     --navColour: #000;
-    --accentColour: #aaa;
+    --accentColour: #000;
     --hovNavColour: #aaa;
-    --titleFontFamily: "Adobe Garamond Pro";
-    --bodyFontFamily: "Adobe Garamond Pro";
-    --titleFontFamilyBackup: monospace;
+    --clickedLinks: #000;
+    --linkColour: #000;
+    font-family: "Adobe Garamond Pro", serif;
 }
 
 @media (prefers-color-scheme: dark) {
     :root {
         --backgroundColour: #222;
-        --textColour: #f22;
+        --titleColour: #f00;
+        --textColour: #f70;
         --navColour: #f00;
         --accentColour: #ddd;
         --hovNavColour: #400;
-        --titleFontFamily: "SF Mono";
-        --titleFontFamilyBackup: monospace;
-        --bodyFontFamily: "SF Mono";
+        --clickedLinks: #fb2;
+        --linkColour: #f22;
+        font-family: "SF Mono", Inconsolata, Courier, "American Typewriter", Monaco, monospace;
     }
 }
 
@@ -26,7 +28,6 @@
     box-sizing: border-box;
     padding: 0;
     margin: 0;
-    font-family: var(--bodyFontFamily);
     ;
 
 }
@@ -36,21 +37,26 @@ html {
     color: var(--textColour);
     max-width: 800px;
     margin: auto;
+    padding-bottom: 3em;
 }
 
 
 
-/* REMOVE IF NOTHING GOES WRONG: margin: 0 auto; */
-
-
-
-
 .title {
-    font-family: var(--titleFontFamily), "Adobe Caslon Pro", Times, "Lucida Grande", "Courier New";
+    font-family: var(--titleFontFamily), var(--titleFontFamilyBackup), "Adobe Caslon Pro", Times, "Lucida Grande", "Courier New";
     font-size: 69pt;
     font-weight: bold;
     text-align: center;
     padding: 2rem 0em;
+    color: var(--titleColour);
+}
+
+.title a {
+color: inherit;
+}
+
+.title a:visited {
+color: inherit;
 }
 
 
@@ -63,6 +69,7 @@ nav {
     line-height: 1.5;
     font-weight: bold;
     font-size: 30px;
+    margin-bottom: 1em;
 }
 
 nav ul {
@@ -71,12 +78,12 @@ nav ul {
 
 nav ul li {
     min-width: 5em;
-    width: 80%;
+    width: 85%;
     border: solid;
     border-radius: 5px;
     border-color: var(--navColour);
     margin: .5em;
-    filter: drop-shadow(5px 5px var(--navColour));
+    filter: drop-shadow(3px 3px var(--navColour));
     background-color: var(--backgroundColour);
 }
 
@@ -86,9 +93,13 @@ nav ul li a {
     margin: -.5em -2em;
 }
 
+nav ul li a:visited {
+    color: var(--navColour);
+}
+
 nav ul li:active {
     filter: drop-shadow(1px 1px);
-    transform: translate(5px, 5px);
+    transform: translate(3px, 3px);
 }
 
 
@@ -100,7 +111,7 @@ nav ul li:hover {
 a {
     text-decoration: none;
     font-weight: bold;
-    color: inherit;
+    color: var(--linkColour);
 }
 
 h1,
@@ -113,7 +124,7 @@ h6 a {
 }
 
 a:visited {
-    color: var(--accentColour);
+    color: var(--clickedLinks);
 }
 
 a:hover {
@@ -126,9 +137,21 @@ a:hover {
     max-width: 30em;
 }
 
+.postDate {
+    margin: 0.8em 0em;
+}
+
+article {
+    margin: 1em 0em;
+}
+
 .postList {
     padding-top: 1em;
     list-style: none;
+}
+
+.postList h2 {
+    margin-bottom: 0.2em;
 }
 
 .postList li {
@@ -136,7 +159,7 @@ a:hover {
     padding-bottom: .5em;
     /*border-bottom: dashed;
 	border-color: #aaa;*/
-    margin-bottom: 3em;
+    margin-bottom: 1.5em;
 
 }
 
@@ -150,18 +173,14 @@ a:hover {
     float: none;
 }
 
-.navMenu,
-.rightMenu {
-    text-align: center;
-}
-
-.navMenuList {
+nav ul li {
     display: inline-block;
+    margin: .15em;
 }
 
 nav ul li a {
-    padding: .5em 7em;
-    margin: -.5em -7em;
+    padding: .5em 8em;
+    margin: -.5em -8em;
 }
 
 }
@@ -189,6 +208,8 @@ nav ul li a {
     .title {
         font-size: 46pt;
     }
+
+	
 
 }
 

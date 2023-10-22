@@ -5,11 +5,11 @@ title: Blog
 <h1>Latest Posts</h1>
 
 <ul class="postList">
-    {% for post in site.posts %}
+    {% for post in site.posts limit: 15%}
     <li>
         <h2><a href="{{ site.baseurl}}{{ post.url }}">{{ post.title }}</a></h2>
-        <em>{{ post.name | split: "_" | first | date: "%d %b, %Y" }}</em>
-        {{ post.excerpt }}
+        <em class"postDate">{{ post.name | split: "_" | first | date: "%d %b, %Y" }}</em>
+        <article>{{ post.excerpt }}</article>
     </li>
     {% endfor %}
     {% for post in site.soccer %}

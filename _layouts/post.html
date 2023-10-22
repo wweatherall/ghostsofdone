@@ -1,8 +1,9 @@
 ---
 layout: default
 ---
+
 <h1>{{ page.title | upcase}}</h1>
-<p>{{ page.date | date_to_string }}
+<p>{{ page.date | date_to_string }} - does this work? {{page.author}}
     {% assign author = site.authors | where: 'short_name', page.author | first %}
     {% if author %}
     - <a href="{{site.baseurl}}{{ author.url }}">{{ author.name }}</a>
@@ -10,4 +11,5 @@ layout: default
 
 
 
-{{ content }}
+{{ content | append: "■"}}
+
