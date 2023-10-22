@@ -37,11 +37,14 @@ color: green;
 html {
   background-color: var(--backgroundColour);
   color: var(--textColour);
-  max-width: 1300px;
+  max-width: 800px;
+   margin: auto;
+  }
+  
 
 
   /* REMOVE IF NOTHING GOES WRONG: margin: 0 auto; */
-}
+
 
 
 

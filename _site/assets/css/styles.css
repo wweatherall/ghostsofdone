@@ -34,10 +34,11 @@
 html {
   background-color: var(--backgroundColour);
   color: var(--textColour);
-  max-width: 1300px;
-  /* REMOVE IF NOTHING GOES WRONG: margin: 0 auto; */
+  max-width: 800px;
+  margin: auto;
 }
 
+/* REMOVE IF NOTHING GOES WRONG: margin: 0 auto; */
 .title {
   font-family: var(--titleFontFamily), "Adobe Caslon Pro", Times, "Lucida Grande", "Courier New";
   font-size: 80pt;
