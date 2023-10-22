@@ -3,35 +3,6 @@ title: My markdown index!
 layout: default
 ---
 
-
-This is my index
-
-U-13 is for players born in
-{{ "now" | date: "%Y" | minus: 13 }} and {{ "now" | date: "%Y" | minus: 12 }}
-
-**U5 is for players born in {{ "now" | date: "%Y" | minus: 5 }} and {{ "now" | date: "%Y" | minus: 4 }}*
-
-- [ ] This is a test of this part
-
-This si the javascript stuff
-
-<script>document.write(new Date().getFullYear()-13);</script>
-
-and <script>document.write(new Date().getFullYear()-12);</script>.
-<p><script>document.write( new Date().getFullYear() );</script>
-    <script type="text/javascript">document.write( new Date().getFullYear() );</script></p>
-This is the javascript stuff
-
-
-I hope this works.
-
-Will safari detect the change? Did it They both do apparently But not with CSS Does this make a dif
-
-why has this diverged so much?
-
-$$ \pi r^2 $$
-
-
 <ul class="postList">
     {% for post in site.posts limit: 5%}
     <li>
@@ -44,4 +15,4 @@ $$ \pi r^2 $$
 
 </ul>
 
-<a href="{{ site.baseurl}}{{ "archive.html" }}">Archive</a>
+<a href="{{ site.baseurl}}{{ "archive.html" }}">More</a>

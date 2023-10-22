@@ -4,9 +4,9 @@
   link: /archive.html
 - name: About
   link: /about.html
-- name: Blog
-  link: /blog.html
-- name: Soccer
-  link: /soccer.html
-- name: Staff
-  link: /staff.html
+#- name: Blog
+ # link: /blog.html
+#- name: Soccer
+#  link: /soccer.html
+#- name: Staff
+ # link: /staff.html
