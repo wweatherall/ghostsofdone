@@ -4,7 +4,7 @@
   --navColour: #000;
   --accentColour: #aaa;
   --hovNavColour: #aaa;
-  --titleFontFamily: "Adobe Garamond Pro" ;
+  --titleFontFamily: "Adobe Garamond Pro";
   --bodyFontFamily: "Adobe Garamond Pro";
   --titleFontFamilyBackup: monospace;
 }
@@ -38,10 +38,10 @@ html {
 /* REMOVE IF NOTHING GOES WRONG: margin: 0 auto; */
 .title {
   font-family: var(--titleFontFamily), "Adobe Caslon Pro", Times, "Lucida Grande", "Courier New";
-  font-size: 80pt;
+  font-size: 69pt;
   font-weight: bold;
   text-align: center;
-  padding: 3rem;
+  padding: 2rem 0em;
 }
 
 nav {
@@ -87,6 +87,16 @@ nav ul li:hover {
 a {
   text-decoration: none;
   font-weight: bold;
+  color: inherit;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 a {
+  color: inherit;
 }
 
 a:visited {
@@ -103,13 +113,28 @@ a:hover {
   max-width: 30em;
 }
 
+.postList {
+  padding-top: 1em;
+  list-style: none;
+}
+
+.postList li {
+  padding-top: 3em;
+  padding-bottom: 0.5em;
+  /*border-bottom: dashed;
+  border-color: #aaa;*/
+  margin-bottom: 3em;
+}
+
 @media only screen and (max-width: 800px) {
   /* For tablets: */
-  nav, .content {
+  nav,
+  .content {
     width: 100%;
     float: none;
   }
-  .navMenu, .rightMenu {
+  .navMenu,
+  .rightMenu {
     text-align: center;
   }
   .navMenuList {
@@ -122,11 +147,16 @@ a:hover {
 }
 @media only screen and (max-width: 500px) {
   /* For tablets: */
-  .navMenu, .content, .rightMenu, .contentLeft, .contentRight {
+  .navMenu,
+  .content,
+  .rightMenu,
+  .contentLeft,
+  .contentRight {
     width: 80%;
     float: left;
   }
-  nav, .rightMenu {
+  nav,
+  .rightMenu {
     text-align: center;
     display: block;
   }

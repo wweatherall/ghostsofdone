@@ -3,12 +3,13 @@ title: My markdown index!
 layout: default
 ---
 
+
 This is my index
 
 U-13 is for players born in
 {{ "now" | date: "%Y" | minus: 13 }} and {{ "now" | date: "%Y" | minus: 12 }}
 
-*U5 is for players born in {{ "now" | date: "%Y" | minus: 5 }} and {{ "now" | date: "%Y" | minus: 4 }}*
+**U5 is for players born in {{ "now" | date: "%Y" | minus: 5 }} and {{ "now" | date: "%Y" | minus: 4 }}*
 
 - [ ] This is a test of this part
 

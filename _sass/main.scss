@@ -4,12 +4,12 @@
     --navColour: #000;
     --accentColour: #aaa;
     --hovNavColour: #aaa;
-    --titleFontFamily: "Adobe Garamond Pro" ;
+    --titleFontFamily: "Adobe Garamond Pro";
     --bodyFontFamily: "Adobe Garamond Pro";
     --titleFontFamilyBackup: monospace;
 }
 
-@media (prefers-color-scheme: dark){
+@media (prefers-color-scheme: dark) {
     :root {
         --backgroundColour: #222;
         --textColour: #f22;
@@ -19,75 +19,75 @@
         --titleFontFamily: "SF Mono";
         --titleFontFamilyBackup: monospace;
         --bodyFontFamily: "SF Mono";
-}
+    }
 }
 
 * {
-  box-sizing: border-box;
-  padding: 0;
-  margin: 0;
-  font-family: var(--bodyFontFamily);
-;
+    box-sizing: border-box;
+    padding: 0;
+    margin: 0;
+    font-family: var(--bodyFontFamily);
+    ;
 
 }
 
 html {
-  background-color: var(--backgroundColour);
-  color: var(--textColour);
-  max-width: 800px;
-   margin: auto;
-  }
-  
+    background-color: var(--backgroundColour);
+    color: var(--textColour);
+    max-width: 800px;
+    margin: auto;
+}
 
 
-  /* REMOVE IF NOTHING GOES WRONG: margin: 0 auto; */
+
+/* REMOVE IF NOTHING GOES WRONG: margin: 0 auto; */
 
 
 
 
 .title {
-	font-family: var(--titleFontFamily), "Adobe Caslon Pro", Times, "Lucida Grande", "Courier New";
-	font-size: 80pt;
-	font-weight: bold;
-	text-align: center;
-	padding: 3rem;
+    font-family: var(--titleFontFamily), "Adobe Caslon Pro", Times, "Lucida Grande", "Courier New";
+    font-size: 69pt;
+    font-weight: bold;
+    text-align: center;
+    padding: 2rem 0em;
 }
 
 
 nav {
-  float: left;
-  
-  
-  text-align: center;
-  color: var(--accentColour);
-  line-height: 1.5;
-  font-weight: bold;
-  font-size: 30px;
+    float: left;
+
+
+    text-align: center;
+    color: var(--accentColour);
+    line-height: 1.5;
+    font-weight: bold;
+    font-size: 30px;
 }
 
 nav ul {
-  list-style: none;
+    list-style: none;
 }
 
 nav ul li {
-  min-width: 5em;
-  width: 80%;
-  border: solid;
-  border-radius: 5px;
-  border-color: var(--navColour);
-  margin: .5em;
-  filter: drop-shadow(5px 5px var(--navColour));
-  background-color: var(--backgroundColour);
+    min-width: 5em;
+    width: 80%;
+    border: solid;
+    border-radius: 5px;
+    border-color: var(--navColour);
+    margin: .5em;
+    filter: drop-shadow(5px 5px var(--navColour));
+    background-color: var(--backgroundColour);
 }
 
-nav ul li a{
-	color: var(--navColour);
-	padding: .5em 2em;
-	margin: -.5em -2em;
+nav ul li a {
+    color: var(--navColour);
+    padding: .5em 2em;
+    margin: -.5em -2em;
 }
 
 nav ul li:active {
-	filter: drop-shadow(1px 1px);
+    filter: drop-shadow(1px 1px);
     transform: translate(5px, 5px);
 }
 
@@ -98,8 +98,18 @@ nav ul li:hover {
 }
 
 a {
-  text-decoration: none;
-  font-weight: bold;
+    text-decoration: none;
+    font-weight: bold;
+    color: inherit;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 a {
+    color: inherit;
 }
 
 a:visited {
@@ -111,58 +121,81 @@ a:hover {
 }
 
 .content {
-	float: left;
-	margin-left: 2em;
-	max-width: 30em;
+    float: left;
+    margin-left: 2em;
+    max-width: 30em;
 }
 
+.postList {
+    padding-top: 1em;
+    list-style: none;
+}
+
+.postList li {
+    padding-top: 3em;
+    padding-bottom: .5em;
+    /*border-bottom: dashed;
+	border-color: #aaa;*/
+    margin-bottom: 3em;
+
+}
 
 @media only screen and (max-width:800px) {
-/* For tablets: */
-nav, .content, {
-  width: 100%;
-  float: none;
+
+    /* For tablets: */
+    nav,
+    .content,
+    {
+    width: 100%;
+    float: none;
 }
 
-.navMenu, .rightMenu {
-  text-align: center;
+.navMenu,
+.rightMenu {
+    text-align: center;
 }
 
 .navMenuList {
-  display: inline-block;
+    display: inline-block;
 }
 
-nav ul li a{
-	padding: .5em 7em;
-	margin: -.5em -7em;
+nav ul li a {
+    padding: .5em 7em;
+    margin: -.5em -7em;
 }
 
 }
 
 @media only screen and (max-width:500px) {
-/* For tablets: */
-.navMenu, .content, .rightMenu, .contentLeft, .contentRight {
-  width: 80%;
-  float: left;
-}
 
-nav, .rightMenu {
-  text-align: center;
-  display: block;
-}
+    /* For tablets: */
+    .navMenu,
+    .content,
+    .rightMenu,
+    .contentLeft,
+    .contentRight {
+        width: 80%;
+        float: left;
+    }
+
+    nav,
+    .rightMenu {
+        text-align: center;
+        display: block;
+    }
 
 
 
-.title {
-	font-size: 46pt;
-}
+    .title {
+        font-size: 46pt;
+    }
 
 }
 
 @media only screen and (max-width:280px) {
-.title{
-	font-size: 24pt;
-}
+    .title {
+        font-size: 24pt;
+    }
 }
 
 /* MAKES THE COLOR CHANGE AFFECT THE PARENT AS WELL

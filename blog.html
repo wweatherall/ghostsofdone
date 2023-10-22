@@ -4,10 +4,11 @@ title: Blog
 ---
 <h1>Latest Posts</h1>
 
-<ul>
+<ul class="postList">
     {% for post in site.posts %}
     <li>
         <h2><a href="{{ site.baseurl}}{{ post.url }}">{{ post.title }}</a></h2>
+        <em>{{ post.name | split: "_" | first | date: "%d %b, %Y" }}</em>
         {{ post.excerpt }}
     </li>
     {% endfor %}
