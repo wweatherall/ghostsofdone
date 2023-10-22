@@ -43,11 +43,66 @@ html {
   /* REMOVE IF NOTHING GOES WRONG: margin: 0 auto; */
 }
 
+
+
+.title {
+	font-family: var(--titleFontFamily), "Adobe Caslon Pro", Times, "Lucida Grande", "Courier New";
+	font-size: 80pt;
+	font-weight: bold;
+	text-align: center;
+	padding: 3rem;
+}
+
+
+nav {
+  float: left;
+  
+  
+  text-align: center;
+  color: var(--accentColour);
+  line-height: 1.5;
+  font-weight: bold;
+  font-size: 30px;
+}
+
+nav ul {
+  list-style: none;
+}
+
+nav ul li {
+  min-width: 5em;
+  width: 80%;
+  border: solid;
+  border-radius: 5px;
+  margin: .5em;
+  filter: drop-shadow(5px 5px);
+  background-color: var(--backgroundColour);
+}
+
+nav ul li a{
+	color: var(--navColour);
+	margin: 1em;
+}
+
+nav ul li:active {
+	filter: drop-shadow(1px 1px);
+    transform: translate(5px, 5px);
+}
+
+
+nav ul li:hover {
+    background-color: var(--hovNavColour);
+    color: var(--textColour);
+}
+
+nav ul li:hover > a {
+    background-color: var(--hovNavColour);
+    color: var(--textColour) !important;
+}
+
 a {
   text-decoration: none;
-  background-color: var(--backgroundColour);
   font-weight: bold;
-  padding: 1rem;
 }
 
 a:visited {
@@ -59,108 +114,18 @@ a:hover {
     color: var(--textColour);
 }
 
-a:active {
-    transform: translate(15px);
-    filter: drop-shadow(1px 1px);
+.content {
+	float: left;
+	margin-left: 2em;
+	max-width: 30em;
 }
-
-.title {
-	font-family: var(--titleFontFamily), "Adobe Caslon Pro", Times, "Lucida Grande", "Courier New";
-	font-size: 80pt;
-	font-weight: bold;
-	text-align: center;
-	padding: 3rem;
-}
-
-
-.navMenuList {
-  transition-property: font-size;
-  transition-duration: 4s;
-  transition-delay: 2s;
-}
-
-.navMenuList:active {
-    transform: translate(5px, 5px);
-    font-size: 56pt;
-}
-
-ul {
-  list-style: none;
-}
-
-
-
-.navMenu {
-  float: left;
-  width: 30%;
-  text-align: right;
-  color: var(--accentColour);
-  line-height: 1.8;
-  font-weight: bold;
-  font-size: 30px;
-}
-
-.navMenuHeading a {
-  color: var(--navColour);
-
-  /* TO MAKE THE BACKGROUND HIGHLIGHT COVER ENOUGH AREA */
-  padding-left: 3px;
-  padding-right: 3px;
-  padding-bottom: 3px;
-  margin-bottom: 5px;
-  width: 200px;
-  border: solid;
-  border-radius: 5px;
-  filter: drop-shadow(5px 5px);
-}
-
-
-.navMenuDropdown {
-  display: none;
-  line-height: 1.2;
-  font-size: 25px;
-}
-
-.navMenuCurrentPage {
-  display:block;
-  line-height: 1.2;
-  font-size: 25px;
-  color: white;
-}
-
-.navMenuCurrentSport a {
-  padding-left: 5px;
-  padding-right: 5px;
-  padding-bottom: 3px;
-  color: white;
-}
-
-.whiteBackground {
-  background-color: #ddd;
-  color: black !important;
-}
-
-.navMenuDropdown a {
-  color: white;
-}
-
-.navMenuHeading:hover > .navMenuDropdown, .active{
-  display: block;
-}
-
-
-
-.bottonTop {
-	min-width: 200px;
-	border: solid;
-}
-
 
 
 @media only screen and (max-width:800px) {
 /* For tablets: */
-.navMenu, .content, .rightMenu {
+nav, .content, {
   width: 100%;
+  float: none;
 }
 
 .navMenu, .rightMenu {
@@ -176,10 +141,11 @@ ul {
 @media only screen and (max-width:500px) {
 /* For tablets: */
 .navMenu, .content, .rightMenu, .contentLeft, .contentRight {
-  width: 100%;
+  width: 80%;
+  float: left;
 }
 
-.navMenu, .rightMenu {
+nav, .rightMenu {
   text-align: center;
   display: block;
 }
@@ -188,6 +154,12 @@ ul {
 	font-size: 46pt;
 }
 
+}
+
+@media only screen and (max-width:280px) {
+.title{
+	font-size: 24pt;
+}
 }
 
 /* MAKES THE COLOR CHANGE AFFECT THE PARENT AS WELL
