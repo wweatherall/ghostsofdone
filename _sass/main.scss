@@ -132,6 +132,11 @@ nav, .content, {
   display: inline-block;
 }
 
+nav ul li a{
+	padding: .5em 7em;
+	margin: -.5em -7em;
+}
+
 }
 
 @media only screen and (max-width:500px) {
@@ -145,6 +150,8 @@ nav, .rightMenu {
   text-align: center;
   display: block;
 }
+
+
 
 .title {
 	font-size: 46pt;
