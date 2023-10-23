@@ -1,7 +1,8 @@
 ---
-title: My markdown index!
+title: Ghosts of Done
 layout: default
 ---
+
 
 <ul class="postList">
     {% for post in site.posts limit: 5%}
