@@ -77,7 +77,7 @@ nav ul {
 }
 
 nav ul li {
-    min-width: 5em;
+    min-width: 6em;
     width: 85%;
     border: solid;
     border-radius: 5px;
@@ -85,11 +85,12 @@ nav ul li {
     margin: .5em;
     filter: drop-shadow(3px 3px var(--navColour));
     background-color: var(--backgroundColour);
+    align-items: center;
 }
 
 nav ul li a {
     color: var(--navColour);
-    padding: .5em 2em;
+    padding: .35em 2em;
     margin: -.5em -2em;
 }
 
