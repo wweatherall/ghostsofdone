@@ -158,7 +158,16 @@ article {
   margin-bottom: 1.5em;
 }
 
+p {
+  margin-bottom: 1em;
+}
+
 iframe {
+  max-width: 90%;
+  padding: 5%;
+}
+
+img {
   max-width: 90%;
   padding: 5%;
 }

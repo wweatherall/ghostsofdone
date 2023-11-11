@@ -168,9 +168,18 @@ article {
 
 }
 
+p {
+	margin-bottom: 1em;
+}
+
 iframe {
     max-width: 90%;
     padding: 5%;
+}
+
+img {
+	max-width: 90%;
+	padding: 5%;
 }
 
 @media only screen and (max-width:800px) {
