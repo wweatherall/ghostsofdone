@@ -20,7 +20,8 @@
         --hovNavColour: #400;
         --clickedLinks: #fb2;
         --linkColour: #f22;
-        font-family: "SF Mono", Inconsolata, Courier, "American Typewriter", Monaco, monospace;
+        font-family: "SF Mono", Inconsolata, Courier, "American Typewriter",
+            Monaco, monospace;
     }
 }
 
@@ -28,8 +29,6 @@
     box-sizing: border-box;
     padding: 0;
     margin: 0;
-    ;
-
 }
 
 html {
@@ -40,10 +39,9 @@ html {
     padding-bottom: 3em;
 }
 
-
-
 .title {
-    font-family: var(--titleFontFamily), var(--titleFontFamilyBackup), "Adobe Caslon Pro", Times, "Lucida Grande", "Courier New";
+    font-family: var(--titleFontFamily), var(--titleFontFamilyBackup),
+        "Adobe Caslon Pro", Times, "Lucida Grande", "Courier New";
     font-size: 69pt;
     font-weight: bold;
     text-align: center;
@@ -59,10 +57,8 @@ html {
     color: inherit;
 }
 
-
 nav {
     float: left;
-
 
     text-align: center;
     color: var(--accentColour);
@@ -82,7 +78,7 @@ nav ul li {
     border: solid;
     border-radius: 5px;
     border-color: var(--navColour);
-    margin: .5em;
+    margin: 0.5em;
     filter: drop-shadow(3px 3px var(--navColour));
     background-color: var(--backgroundColour);
     align-items: center;
@@ -90,8 +86,8 @@ nav ul li {
 
 nav ul li a {
     color: var(--navColour);
-    padding: .35em 2em;
-    margin: -.5em -2em;
+    padding: 0.35em 2em;
+    margin: -0.5em -2em;
 }
 
 nav ul li a:visited {
@@ -102,7 +98,6 @@ nav ul li:active {
     filter: drop-shadow(1px 1px);
     transform: translate(3px, 3px);
 }
-
 
 nav ul li:hover {
     background-color: var(--hovNavColour);
@@ -161,15 +156,23 @@ article {
 
 .postList li {
     padding-top: 0em;
-    padding-bottom: .5em;
+    padding-bottom: 0.5em;
     /*border-bottom: dashed;
 	border-color: #aaa;*/
     margin-bottom: 1.5em;
-
 }
 
 p {
-	margin-bottom: 1em;
+    margin-bottom: 1em;
+}
+
+article {
+    text-align: justify;
+}
+
+blockquote {
+    padding-left: 1em;
+    padding-right: 1em;
 }
 
 iframe {
@@ -178,34 +181,30 @@ iframe {
 }
 
 img {
-	max-width: 90%;
-	padding: 5%;
+    max-width: 90%;
+    padding: 5%;
 }
 
-@media only screen and (max-width:800px) {
-
+@media only screen and (max-width: 800px) {
     /* For tablets: */
     nav,
-    .content,
-    {
-    width: 100%;
-    float: none;
+    .content {
+        width: 100%;
+        float: none;
+    }
+
+    nav ul li {
+        display: inline-block;
+        margin: 0.15em;
+    }
+
+    nav ul li a {
+        padding: 0.5em 8em;
+        margin: -0.5em -8em;
+    }
 }
 
-nav ul li {
-    display: inline-block;
-    margin: .15em;
-}
-
-nav ul li a {
-    padding: .5em 8em;
-    margin: -.5em -8em;
-}
-
-}
-
-@media only screen and (max-width:500px) {
-
+@media only screen and (max-width: 500px) {
     /* For tablets: */
     .navMenu,
     .content,
@@ -222,17 +221,12 @@ nav ul li a {
         display: block;
     }
 
-
-
     .title {
         font-size: 46pt;
     }
-
-
-
 }
 
-@media only screen and (max-width:280px) {
+@media only screen and (max-width: 280px) {
     .title {
         font-size: 24pt;
     }
