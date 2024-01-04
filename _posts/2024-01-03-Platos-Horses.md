@@ -1,0 +1,1 @@
+In the *Phaedrus*, Plato describes the soul as a chariot. The chariot consists of a driver and two horses. While not fully explored in the *Phaedrus*, in the Republic he expands on the idea using a different metaphor, but one that I think applies to
