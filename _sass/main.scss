@@ -10,20 +10,6 @@
     font-family: "Adobe Garamond Pro", serif;
 }
 
-@media (prefers-color-scheme: light) {
-	 :root {
-    --backgroundColour: #ddd;
-    --titleColour: #000;
-    --textColour: #000;
-    --navColour: #000;
-    --accentColour: #000;
-    --hovNavColour: #aaa;
-    --clickedLinks: #000;
-    --linkColour: #000;
-    font-family: "Adobe Garamond Pro", serif;
-}
-}
-
 @media (prefers-color-scheme: dark) {
     :root {
         --backgroundColour: #222;

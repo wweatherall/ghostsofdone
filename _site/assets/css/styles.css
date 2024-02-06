@@ -1,4 +1,5 @@
-:root {
+@charset "UTF-8";
+ :root {
   --backgroundColour: #ddd;
   --titleColour: #000;
   --textColour: #000;
