@@ -2,15 +2,15 @@
 <urlset xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd" xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 <url>
 <loc>http://localhost:4000/authors/jill.html</loc>
-<lastmod>2024-01-09T20:36:58-07:00</lastmod>
+<lastmod>2024-02-19T15:44:14-07:00</lastmod>
 </url>
 <url>
 <loc>http://localhost:4000/authors/ted.html</loc>
-<lastmod>2024-01-09T20:36:58-07:00</lastmod>
+<lastmod>2024-02-19T15:44:14-07:00</lastmod>
 </url>
 <url>
 <loc>http://localhost:4000/authors/will.html</loc>
-<lastmod>2024-01-09T20:36:58-07:00</lastmod>
+<lastmod>2024-02-19T15:44:14-07:00</lastmod>
 </url>
 <url>
 <loc>http://localhost:4000/2023/10/22/ghosts-of-done.html</loc>
@@ -30,11 +30,11 @@
 </url>
 <url>
 <loc>http://localhost:4000/soccer/U5.html</loc>
-<lastmod>2024-01-09T20:36:58-07:00</lastmod>
+<lastmod>2024-02-19T15:44:14-07:00</lastmod>
 </url>
 <url>
 <loc>http://localhost:4000/soccer/U7.html</loc>
-<lastmod>2024-01-09T20:36:58-07:00</lastmod>
+<lastmod>2024-02-19T15:44:14-07:00</lastmod>
 </url>
 <url>
 <loc>http://localhost:4000/about.html</loc>

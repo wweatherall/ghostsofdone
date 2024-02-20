@@ -217,7 +217,7 @@ img {
     font-size: 46pt;
   }
 }
-@media only screen and (max-width: 280px) {
+@media only screen and (max-width: 480px) {
   .title {
     font-size: 24pt;
   }
