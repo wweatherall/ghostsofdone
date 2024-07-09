@@ -55,6 +55,11 @@ html {
   color: inherit;
 }
 
+li {
+  padding: 0em;
+  margin: 0em;
+}
+
 nav {
   float: left;
   text-align: center;

@@ -1,113 +1,118 @@
  :root {
-    --backgroundColour: #ddd;
-    --titleColour: #000;
-    --textColour: #000;
-    --navColour: #000;
-    --accentColour: #000;
-    --hovNavColour: #aaa;
-    --clickedLinks: #000;
-    --linkColour: #000;
-    font-family: "Adobe Garamond Pro", serif;
+  --backgroundColour: #ddd;
+  --titleColour: #000;
+  --textColour: #000;
+  --navColour: #000;
+  --accentColour: #000;
+  --hovNavColour: #aaa;
+  --clickedLinks: #000;
+  --linkColour: #000;
+  font-family: "Adobe Garamond Pro", serif;
 }
 
 @media (prefers-color-scheme: dark) {
-    :root {
-        --backgroundColour: #222;
-        --titleColour: #f00;
-        --textColour: #f70;
-        --navColour: #f00;
-        --accentColour: #ddd;
-        --hovNavColour: #400;
-        --clickedLinks: #fb2;
-        --linkColour: #f22;
-        font-family: "SF Mono", Inconsolata, Courier, "American Typewriter",
-            Monaco, monospace;
-    }
+  :root {
+    --backgroundColour: #222;
+    --titleColour: #f00;
+    --textColour: #f70;
+    --navColour: #f00;
+    --accentColour: #ddd;
+    --hovNavColour: #400;
+    --clickedLinks: #fb2;
+    --linkColour: #f22;
+    font-family: "SF Mono", Inconsolata, Courier, "American Typewriter", Monaco,
+      monospace;
+  }
 }
 
 * {
-    box-sizing: border-box;
-    padding: 0;
-    margin: 0;
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
 }
 
 html {
-    background-color: var(--backgroundColour);
-    color: var(--textColour);
-    max-width: 800px;
-    margin: auto;
-    padding-bottom: 3em;
+  background-color: var(--backgroundColour);
+  color: var(--textColour);
+  max-width: 800px;
+  margin: auto;
+  padding-bottom: 3em;
 }
 
 .title {
-    font-family: var(--titleFontFamily), var(--titleFontFamilyBackup),
-        "Adobe Caslon Pro", Times, "Lucida Grande", "Courier New";
-    font-size: 69pt;
-    font-weight: bold;
-    text-align: center;
-    padding: 2rem 0em;
-    color: var(--titleColour);
+  font-family: var(--titleFontFamily), var(--titleFontFamilyBackup),
+    "Adobe Caslon Pro", Times, "Lucida Grande", "Courier New";
+  font-size: 69pt;
+  font-weight: bold;
+  text-align: center;
+  padding: 2rem 0em;
+  color: var(--titleColour);
 }
 
 .title a {
-    color: inherit;
+  color: inherit;
 }
 
 .title a:visited {
-    color: inherit;
+  color: inherit;
+}
+
+li {
+  padding: 0em;
+  margin: 0em;
 }
 
 nav {
-    float: left;
+  float: left;
 
-    text-align: center;
-    color: var(--accentColour);
-    line-height: 1.5;
-    font-weight: bold;
-    font-size: 30px;
-    margin-bottom: 1em;
+  text-align: center;
+  color: var(--accentColour);
+  line-height: 1.5;
+  font-weight: bold;
+  font-size: 30px;
+  margin-bottom: 1em;
 }
 
 nav ul {
-    list-style: none;
+  list-style: none;
 }
 
 nav ul li {
-    min-width: 6em;
-    width: 85%;
-    border: solid;
-    border-radius: 5px;
-    border-color: var(--navColour);
-    margin: 0.5em;
-    filter: drop-shadow(3px 3px var(--navColour));
-    background-color: var(--backgroundColour);
-    align-items: center;
+  min-width: 6em;
+  width: 85%;
+  border: solid;
+  border-radius: 5px;
+  border-color: var(--navColour);
+  margin: 0.5em;
+  filter: drop-shadow(3px 3px var(--navColour));
+  background-color: var(--backgroundColour);
+  align-items: center;
 }
 
 nav ul li a {
-    color: var(--navColour);
-    padding: 0.35em 2em;
-    margin: -0.5em -2em;
+  color: var(--navColour);
+  padding: 0.35em 2em;
+  margin: -0.5em -2em;
 }
 
 nav ul li a:visited {
-    color: var(--navColour);
+  color: var(--navColour);
 }
 
 nav ul li:active {
-    filter: drop-shadow(1px 1px);
-    transform: translate(3px, 3px);
+  filter: drop-shadow(1px 1px);
+  transform: translate(3px, 3px);
 }
 
 nav ul li:hover {
-    background-color: var(--hovNavColour);
-    color: var(--textColour);
+  background-color: var(--hovNavColour);
+  color: var(--textColour);
 }
 
 a {
-    text-decoration: none;
-    font-weight: bold;
-    color: var(--linkColour);
+  text-decoration: none;
+  font-weight: bold;
+  color: var(--linkColour);
 }
 
 h1,
@@ -116,120 +121,120 @@ h3,
 h4,
 h5,
 h6 a {
-    color: inherit;
+  color: inherit;
 }
 
 h1 {
-    margin-top: 0.5em;
+  margin-top: 0.5em;
 }
 
 a:visited {
-    color: var(--clickedLinks);
+  color: var(--clickedLinks);
 }
 
 a:hover {
-    color: var(--textColour);
+  color: var(--textColour);
 }
 
 .content {
-    float: left;
-    margin-left: 2em;
-    max-width: 30em;
+  float: left;
+  margin-left: 2em;
+  max-width: 30em;
 }
 
 .postDate {
-    margin: 0.8em 0em;
+  margin: 0.8em 0em;
 }
 
 article {
-    margin: 1em 0em;
+  margin: 1em 0em;
 }
 
 .postList {
-    padding-top: 1em;
-    list-style: none;
+  padding-top: 1em;
+  list-style: none;
 }
 
 .postList h2 {
-    margin-bottom: 0.2em;
+  margin-bottom: 0.2em;
 }
 
 .postList li {
-    padding-top: 0em;
-    padding-bottom: 0.5em;
-    /*border-bottom: dashed;
+  padding-top: 0em;
+  padding-bottom: 0.5em;
+  /*border-bottom: dashed;
 	border-color: #aaa;*/
-    margin-bottom: 1.5em;
+  margin-bottom: 1.5em;
 }
 
 p {
-    margin-bottom: 1em;
+  margin-bottom: 1em;
 }
 
 article {
-    text-align: justify;
+  text-align: justify;
 }
 
 blockquote {
-    padding-left: 1em;
-    padding-right: 1em;
+  padding-left: 1em;
+  padding-right: 1em;
 }
 
 iframe {
-    max-width: 90%;
-    padding: 5%;
+  max-width: 90%;
+  padding: 5%;
 }
 
 img {
-    max-width: 90%;
-    padding: 5%;
+  max-width: 90%;
+  padding: 5%;
 }
 
 @media only screen and (max-width: 800px) {
-    /* For tablets: */
-    nav,
-    .content {
-        width: 100%;
-        float: none;
-    }
+  /* For tablets: */
+  nav,
+  .content {
+    width: 100%;
+    float: none;
+  }
 
-    nav ul li {
-        display: inline-block;
-        margin: 0.15em;
-    }
+  nav ul li {
+    display: inline-block;
+    margin: 0.15em;
+  }
 
-    nav ul li a {
-        padding: 0.5em 8em;
-        margin: -0.5em -8em;
-    }
+  nav ul li a {
+    padding: 0.5em 8em;
+    margin: -0.5em -8em;
+  }
 }
 
 @media only screen and (max-width: 500px) {
-    /* For tablets: */
-    .navMenu,
-    .content,
-    .rightMenu,
-    .contentLeft,
-    .contentRight {
-        width: 80%;
-        float: left;
-    }
+  /* For tablets: */
+  .navMenu,
+  .content,
+  .rightMenu,
+  .contentLeft,
+  .contentRight {
+    width: 80%;
+    float: left;
+  }
 
-    nav,
-    .rightMenu {
-        text-align: center;
-        display: block;
-    }
+  nav,
+  .rightMenu {
+    text-align: center;
+    display: block;
+  }
 
-    .title {
-        font-size: 46pt;
-    }
+  .title {
+    font-size: 46pt;
+  }
 }
 
 @media only screen and (max-width: 480px) {
-    .title {
-        font-size: 24pt;
-    }
+  .title {
+    font-size: 24pt;
+  }
 }
 
 /* MAKES THE COLOR CHANGE AFFECT THE PARENT AS WELL
