@@ -1,6 +1,7 @@
 ---
-title: [Heartbreaking: The Worst Person You Know Just Made a Great Point](https://clickhole.com/heartbreaking-the-worst-person-you-know-just-made-a-gr-1825121606/)
+title: Heartbreaking: The Worst Person You Know Just Made a Great Point[^0]
 ---
+[^0]:https://clickhole.com/heartbreaking-the-worst-person-you-know-just-made-a-gr-1825121606/
 
 When I was 18 (2004), I got my first real job at Nordic Furniture of Markdale ON. We made danish-style minimalist chairs and tables. In early 2005 I and other lower seniority workers in the factory were laid off. It hobbled on for another few years before going out of business for good. The furniture was high quality, the prices didn't change, but people's willingness to pay for quality had dropped. This story is not an uncommon one in Southern Ontario.[^1][^2]
 
