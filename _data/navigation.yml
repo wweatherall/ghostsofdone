@@ -4,6 +4,10 @@
   link: /archive.html
 - name: About
   link: /about.html
+- name: Hip Calc
+  link: /hip-calculator.html
+- name: Spindle Calc
+  link: /spindle-calculator.html
 #- name: Blog
  # link: /blog.html
 #- name: Soccer

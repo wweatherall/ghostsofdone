@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "ghostsofdone",
+      "runtimeExecutable": "jekyll",
+      "runtimeArgs": ["serve", "--source", "/Users/Will/Sites/ghostsofdone"],
+      "port": 4000
+    }
+  ]
+}

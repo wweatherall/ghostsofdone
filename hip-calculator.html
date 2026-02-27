@@ -1,0 +1,170 @@
+---
+title: Hip Calculator
+layout: default
+---
+
+<article>
+<h1>Hip Rafter Calculator</h1>
+<p>For a square hip roof. Enter the run (wall plate to ridge center) and pitch.</p>
+
+<div class="calc-wrap">
+
+  <div class="calc-group">
+    <label>Run</label>
+    <div class="input-row">
+      <input type="number" id="runFt" min="0" step="1" placeholder="ft">
+      <span>ft</span>
+      <input type="number" id="runIn" min="0" max="11.875" step="0.125" placeholder="in">
+      <span>in</span>
+    </div>
+  </div>
+
+  <div class="calc-group">
+    <label>Pitch (rise per 12")</label>
+    <div class="input-row">
+      <input type="number" id="pitch" min="0" step="0.25" placeholder="e.g. 6">
+      <span>: 12</span>
+    </div>
+  </div>
+
+  <button onclick="calcHip()">Calculate</button>
+
+</div>
+
+<div id="hipResults" hidden>
+  <table class="calc-table">
+    <thead>
+      <tr><th>Measurement</th><th>Value</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Common Rafter Length</td><td id="rCommon"></td></tr>
+      <tr><td>Hip Rafter Length</td><td id="rHip"></td></tr>
+      <tr><td>Rafter Angle</td><td id="aCommon"></td></tr>
+      <tr><td>Hip Plumb Cut Angle</td><td id="aHip"></td></tr>
+      <tr><td>Bevel / Side Cut</td><td id="aBevel"></td></tr>
+    </tbody>
+  </table>
+</div>
+
+</article>
+
+<style>
+.calc-wrap {
+  margin: 1.5em 0;
+}
+.calc-group {
+  margin-bottom: 1em;
+}
+.calc-group label {
+  display: block;
+  font-weight: bold;
+  margin-bottom: 0.35em;
+}
+.input-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4em;
+}
+.input-row span {
+  color: var(--textColour);
+}
+input[type="number"] {
+  width: 5em;
+  background: var(--backgroundColour);
+  color: var(--textColour);
+  border: 1px solid var(--navColour);
+  border-radius: 3px;
+  padding: 0.3em 0.4em;
+  font-family: inherit;
+  font-size: inherit;
+}
+button {
+  background: var(--backgroundColour);
+  color: var(--navColour);
+  border: solid 2px var(--navColour);
+  border-radius: 5px;
+  padding: 0.35em 1.5em;
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: bold;
+  cursor: pointer;
+  filter: drop-shadow(3px 3px var(--navColour));
+  margin-top: 0.25em;
+}
+button:active {
+  filter: drop-shadow(1px 1px var(--navColour));
+  transform: translate(2px, 2px);
+}
+.calc-table {
+  border-collapse: collapse;
+  width: 100%;
+  margin-top: 1.5em;
+}
+.calc-table th,
+.calc-table td {
+  padding: 0.4em 0.6em;
+  border-bottom: 1px solid var(--navColour);
+  text-align: left;
+}
+.calc-table th {
+  font-weight: bold;
+}
+.calc-table td:last-child {
+  text-align: right;
+  font-weight: bold;
+}
+</style>
+
+<script>
+function calcHip() {
+  const ft  = parseFloat(document.getElementById('runFt').value) || 0;
+  const ins = parseFloat(document.getElementById('runIn').value) || 0;
+  const pitch = parseFloat(document.getElementById('pitch').value);
+
+  const run = ft + ins / 12; // total run in decimal feet
+
+  if (run <= 0 || isNaN(pitch) || pitch < 0) {
+    alert('Please enter a valid run and pitch.');
+    return;
+  }
+
+  const rise = run * pitch / 12;
+
+  // Common rafter
+  const commonLen = Math.sqrt(run * run + rise * rise);
+  const commonAngle = Math.atan2(pitch, 12) * 180 / Math.PI;
+
+  // Hip rafter (diagonal run = run * sqrt(2))
+  const hipRun = run * Math.SQRT2;
+  const hipLen  = Math.sqrt(hipRun * hipRun + rise * rise);
+  const hipAngle = Math.atan2(pitch, 12 * Math.SQRT2) * 180 / Math.PI;
+
+  // Side cut / bevel — for a square plan this is arctan(1/√2) ≈ 35.26°
+  const bevelAngle = Math.atan2(1, Math.SQRT2) * 180 / Math.PI;
+
+  document.getElementById('rCommon').textContent = toFtIn(commonLen);
+  document.getElementById('rHip').textContent    = toFtIn(hipLen);
+  document.getElementById('aCommon').textContent = commonAngle.toFixed(2) + '°';
+  document.getElementById('aHip').textContent    = hipAngle.toFixed(2) + '°';
+  document.getElementById('aBevel').textContent  = bevelAngle.toFixed(2) + '°';
+
+  document.getElementById('hipResults').hidden = false;
+}
+
+function toFtIn(feet) {
+  const totalIn = feet * 12;
+  const rounded = Math.round(totalIn * 8) / 8; // nearest 1/8"
+  const ft = Math.floor(rounded / 12);
+  const rem = rounded - ft * 12;
+  const whole = Math.floor(rem);
+  const eighths = Math.round((rem - whole) * 8);
+
+  const fracMap = ['', '⅛', '¼', '⅜', '½', '⅝', '¾', '⅞'];
+
+  if (eighths === 8) {
+    return `${ft}' ${whole + 1}"`;
+  }
+  const frac = eighths > 0 ? ' ' + fracMap[eighths] : '';
+  return `${ft}' ${whole}${frac}"`;
+}
+</script>

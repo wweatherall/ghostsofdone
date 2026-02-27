@@ -1,0 +1,189 @@
+---
+title: Spindle Calculator
+layout: default
+---
+
+<article>
+<h1>Spindle Calculator</h1>
+<p>Even spindle spacing for deck rails. Finds the number of spindles that keeps the gap at or under your maximum.</p>
+
+<div class="calc-wrap">
+
+  <div class="calc-group">
+    <label>Opening Width</label>
+    <div class="input-row">
+      <input type="number" id="opening" min="0" step="0.125" placeholder="e.g. 48">
+      <span>in</span>
+    </div>
+  </div>
+
+  <div class="calc-group">
+    <label>Spindle Width</label>
+    <div class="input-row">
+      <input type="number" id="spindleW" min="0" step="0.125" placeholder="e.g. 1.5">
+      <span>in</span>
+    </div>
+  </div>
+
+  <div class="calc-group">
+    <label>Max Gap</label>
+    <div class="input-row">
+      <input type="number" id="maxGap" min="0" step="0.125" value="4">
+      <span>in</span>
+    </div>
+  </div>
+
+  <button onclick="calcSpindle()">Calculate</button>
+
+</div>
+
+<div id="spindleResults" hidden>
+  <table class="calc-table">
+    <thead>
+      <tr><th>Measurement</th><th>Value</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Number of Spindles</td><td id="numSpindles"></td></tr>
+      <tr><td>Gap Between Spindles</td><td id="actualGap"></td></tr>
+      <tr><td>Gap from Post to First Spindle</td><td id="endGap"></td></tr>
+    </tbody>
+  </table>
+  <p id="spindleNote" class="calc-note"></p>
+</div>
+
+</article>
+
+<style>
+.calc-wrap {
+  margin: 1.5em 0;
+}
+.calc-group {
+  margin-bottom: 1em;
+}
+.calc-group label {
+  display: block;
+  font-weight: bold;
+  margin-bottom: 0.35em;
+}
+.input-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4em;
+}
+.input-row span {
+  color: var(--textColour);
+}
+input[type="number"] {
+  width: 5em;
+  background: var(--backgroundColour);
+  color: var(--textColour);
+  border: 1px solid var(--navColour);
+  border-radius: 3px;
+  padding: 0.3em 0.4em;
+  font-family: inherit;
+  font-size: inherit;
+}
+button {
+  background: var(--backgroundColour);
+  color: var(--navColour);
+  border: solid 2px var(--navColour);
+  border-radius: 5px;
+  padding: 0.35em 1.5em;
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: bold;
+  cursor: pointer;
+  filter: drop-shadow(3px 3px var(--navColour));
+  margin-top: 0.25em;
+}
+button:active {
+  filter: drop-shadow(1px 1px var(--navColour));
+  transform: translate(2px, 2px);
+}
+.calc-table {
+  border-collapse: collapse;
+  width: 100%;
+  margin-top: 1.5em;
+}
+.calc-table th,
+.calc-table td {
+  padding: 0.4em 0.6em;
+  border-bottom: 1px solid var(--navColour);
+  text-align: left;
+}
+.calc-table th {
+  font-weight: bold;
+}
+.calc-table td:last-child {
+  text-align: right;
+  font-weight: bold;
+}
+.calc-note {
+  margin-top: 1em;
+  font-style: italic;
+  font-size: 0.9em;
+  color: var(--textColour);
+  opacity: 0.8;
+}
+</style>
+
+<script>
+function calcSpindle() {
+  const opening  = parseFloat(document.getElementById('opening').value);
+  const spindleW = parseFloat(document.getElementById('spindleW').value);
+  const maxGap   = parseFloat(document.getElementById('maxGap').value);
+
+  if (isNaN(opening) || opening <= 0 ||
+      isNaN(spindleW) || spindleW <= 0 ||
+      isNaN(maxGap) || maxGap <= 0) {
+    alert('Please enter valid values.');
+    return;
+  }
+
+  if (spindleW >= opening) {
+    alert('Spindle width must be less than the opening width.');
+    return;
+  }
+
+  // Minimum number of spindles so that gap ≤ maxGap
+  // Layout: [gap][spindle][gap]...[spindle][gap]
+  // (N+1)*gap + N*spindleW = opening
+  // gap = (opening - N*spindleW) / (N+1)
+  // Solve for minimum N: N ≥ (opening - maxGap) / (spindleW + maxGap)
+  const minN = (opening - maxGap) / (spindleW + maxGap);
+  const N = Math.ceil(minN);
+
+  const actualGap = (opening - N * spindleW) / (N + 1);
+
+  document.getElementById('numSpindles').textContent = N;
+  document.getElementById('actualGap').textContent   = toIn(actualGap);
+  document.getElementById('endGap').textContent      = toIn(actualGap);
+
+  const note = document.getElementById('spindleNote');
+  if (actualGap < maxGap) {
+    note.textContent = `Gaps are ${toIn(actualGap)} — ${toIn(maxGap - actualGap)} under the ${maxGap}" max.`;
+  } else {
+    note.textContent = `Gaps are exactly ${toIn(actualGap)}.`;
+  }
+
+  document.getElementById('spindleResults').hidden = false;
+}
+
+// Format decimal inches to nearest 1/16" with fraction
+function toIn(inches) {
+  const rounded = Math.round(inches * 16) / 16;
+  const whole = Math.floor(rounded);
+  const sixteenths = Math.round((rounded - whole) * 16);
+
+  const fracMap = {
+    0: '', 1: '¹⁄₁₆', 2: '⅛', 3: '³⁄₁₆',
+    4: '¼', 5: '⁵⁄₁₆', 6: '⅜', 7: '⁷⁄₁₆',
+    8: '½', 9: '⁹⁄₁₆', 10: '⅝', 11: '¹¹⁄₁₆',
+    12: '¾', 13: '¹³⁄₁₆', 14: '⅞', 15: '¹⁵⁄₁₆'
+  };
+
+  if (sixteenths === 16) return `${whole + 1}"`;
+  const frac = sixteenths > 0 ? ' ' + fracMap[sixteenths] : '';
+  return `${whole}${frac}"`;
+}
+</script>
