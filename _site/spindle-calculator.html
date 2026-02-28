@@ -1,9 +1,51 @@
----
-title: Spindle Calculator
-layout: default
----
+<!doctype html>
+<html>
 
-<article>
+<head>
+
+
+    <meta charset="utf-8">
+    <title>Spindle Calculator</title>
+    <link rel="stylesheet" href="/assets/css/styles.css">
+    <link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" />
+
+
+    <link rel="apple-touch-icon" sizes="180x180" href="assets/images/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/images/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/images/favicon-16x16.png">
+    <link rel="manifest" href="assets/images/site.webmanifest">
+    <link rel="mask-icon" href="assets/images/safari-pinned-tab.svg" color="#5bbad5">
+    <meta name="msapplication-TileColor" content="#000000">
+    <meta name="theme-color" content="#ffffff">
+
+</head>
+
+<body>
+
+    <header class="title"><a href="/">Ghosts of&nbspDone</a></header>
+
+
+    <nav>
+
+    <ul class="navMenuHeading">
+        
+        <li class="navMenuList"><a href="/" >Home</a></li>
+        
+        <li class="navMenuList"><a href="/archive.html" >Archive</a></li>
+        
+        <li class="navMenuList"><a href="/about.html" >About</a></li>
+        
+        <li class="navMenuList"><a href="/hip-calculator.html" >Hip Calc</a></li>
+        
+        <li class="navMenuList"><a href="/spindle-calculator.html" class="current" >Spindle Calc</a></li>
+        
+    </ul>
+
+</nav>
+
+    <div class="content">
+
+        <article>
 <h1>Spindle Calculator</h1>
 <p>Even spindle spacing for deck rails. Finds the number of spindles that keeps the gap at or under your maximum.</p>
 
@@ -12,7 +54,7 @@ layout: default
   <div class="calc-group">
     <label>Opening Width</label>
     <div class="input-row">
-      <input type="number" id="opening" min="0" step="0.125" placeholder="e.g. 48" inputmode="decimal">
+      <input type="number" id="opening" min="0" step="0.125" placeholder="e.g. 48">
       <span>in</span>
     </div>
   </div>
@@ -20,7 +62,7 @@ layout: default
   <div class="calc-group">
     <label>Spindle Width</label>
     <div class="input-row">
-      <input type="number" id="spindleW" min="0" step="0.125" placeholder="e.g. 1.5" inputmode="decimal">
+      <input type="number" id="spindleW" min="0" step="0.125" placeholder="e.g. 1.5">
       <span>in</span>
     </div>
   </div>
@@ -28,7 +70,7 @@ layout: default
   <div class="calc-group">
     <label>Max Gap</label>
     <div class="input-row">
-      <input type="number" id="maxGap" min="0" step="0.125" value="4" inputmode="decimal">
+      <input type="number" id="maxGap" min="0" step="0.125" value="4">
       <span>in</span>
     </div>
   </div>
@@ -187,3 +229,13 @@ function toIn(inches) {
   return `${whole}${frac}"`;
 }
 </script>
+
+    </div>
+
+
+</body>
+
+<script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
+    type="text/javascript"></script>
+
+</html>

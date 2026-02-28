@@ -1,9 +1,51 @@
----
-title: Hip Calculator
-layout: default
----
+<!doctype html>
+<html>
 
-<article>
+<head>
+
+
+    <meta charset="utf-8">
+    <title>Hip Calculator</title>
+    <link rel="stylesheet" href="/assets/css/styles.css">
+    <link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" />
+
+
+    <link rel="apple-touch-icon" sizes="180x180" href="assets/images/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/images/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/images/favicon-16x16.png">
+    <link rel="manifest" href="assets/images/site.webmanifest">
+    <link rel="mask-icon" href="assets/images/safari-pinned-tab.svg" color="#5bbad5">
+    <meta name="msapplication-TileColor" content="#000000">
+    <meta name="theme-color" content="#ffffff">
+
+</head>
+
+<body>
+
+    <header class="title"><a href="/">Ghosts of&nbspDone</a></header>
+
+
+    <nav>
+
+    <ul class="navMenuHeading">
+        
+        <li class="navMenuList"><a href="/" >Home</a></li>
+        
+        <li class="navMenuList"><a href="/archive.html" >Archive</a></li>
+        
+        <li class="navMenuList"><a href="/about.html" >About</a></li>
+        
+        <li class="navMenuList"><a href="/hip-calculator.html" class="current" >Hip Calc</a></li>
+        
+        <li class="navMenuList"><a href="/spindle-calculator.html" >Spindle Calc</a></li>
+        
+    </ul>
+
+</nav>
+
+    <div class="content">
+
+        <article>
 <h1>Hip Rafter Calculator</h1>
 <p id="calcDesc">For a square hip roof. Enter the run (wall plate to ridge center) and pitch.</p>
 
@@ -12,9 +54,9 @@ layout: default
   <div class="calc-group">
     <label>Run</label>
     <div class="input-row">
-      <input type="number" id="runFt" min="0" step="1" placeholder="ft" inputmode="numeric">
+      <input type="number" id="runFt" min="0" step="1" placeholder="ft">
       <span>ft</span>
-      <input type="number" id="runIn" min="0" max="11.875" step="0.125" placeholder="in" inputmode="decimal">
+      <input type="number" id="runIn" min="0" max="11.875" step="0.125" placeholder="in">
       <span>in</span>
     </div>
   </div>
@@ -22,7 +64,7 @@ layout: default
   <div class="calc-group">
     <label id="pitchLabel">Pitch (rise per 12")</label>
     <div class="input-row">
-      <input type="number" id="pitch" min="0" step="0.25" placeholder="e.g. 6" inputmode="decimal">
+      <input type="number" id="pitch" min="0" step="0.25" placeholder="e.g. 6">
       <span>: 12</span>
     </div>
   </div>
@@ -30,7 +72,7 @@ layout: default
   <div class="calc-group" id="pitch2Group" hidden>
     <label>End Pitch (rise per 12")</label>
     <div class="input-row">
-      <input type="number" id="pitch2" min="0" step="0.25" placeholder="e.g. 4" inputmode="decimal">
+      <input type="number" id="pitch2" min="0" step="0.25" placeholder="e.g. 4">
       <span>: 12</span>
     </div>
   </div>
@@ -57,8 +99,8 @@ layout: default
       <tr><td>Hip Rafter Length</td><td id="rHip"></td></tr>
       <tr><td>Rafter Angle</td><td id="aCommon"></td></tr>
       <tr id="aEndRow" hidden><td>End Rafter Angle</td><td id="aEnd"></td></tr>
-      <tr><td>Hip Rise / Run</td><td id="aHip"></td></tr>
-      <tr><td id="bevelLabel">Side Cut (miter)</td><td id="aBevel"></td></tr>
+      <tr><td>Hip Plumb Cut Angle</td><td id="aHip"></td></tr>
+      <tr><td id="bevelLabel">Bevel / Side Cut</td><td id="aBevel"></td></tr>
     </tbody>
   </table>
 </div>
@@ -183,38 +225,34 @@ function calcHip() {
   const endAngle = Math.atan2(p2, 12) * 180 / Math.PI;
 
   // Hip rafter
-  // For equal pitch:  hip plan run = run*√2, unit run ≈ 16.97 per 12" of building run
-  // For mixed pitch:  hip plan run = √(run² + endRun²), unit run varies
+  // For equal pitch:  hip plan run = run*√2, plan angle = 45°
+  // For mixed pitch:  hip plan run = √(run² + endRun²), plan angle = arctan(p1/p2)
   const hipPlanRun = Math.sqrt(run * run + endRun * endRun);
   const hipLen     = Math.sqrt(hipPlanRun * hipPlanRun + rise * rise);
+  const hipAngle   = Math.atan2(rise, hipPlanRun) * 180 / Math.PI;
 
-  // Hip rise/run in X/17 framing-square format:
-  // unit run = how far the hip travels horizontally per 12" of building run
-  const hipUnitRun  = (hipPlanRun / run) * 12; // ≈ 16.97 for equal pitch
-  const hipRiseRun  = `${p1} / ${hipUnitRun.toFixed(2)}`;
-
-  // Bevel angles for the cheek cut at the ridge.
-  // Equal pitch: both faces = arctan(p1/p2) = arctan(1) = 45°
-  // Bastard hip: face 1 = arctan(p1/p2), face 2 = arctan(p2/p1) — always sum to 90°
-  const sideCut1 = Math.atan2(p1, p2) * 180 / Math.PI;
-  const sideCut2 = Math.atan2(p2, p1) * 180 / Math.PI;
+  // Side cuts — each face of the hip rafter has its own bevel
+  // Face toward main-pitch side:  arctan(run   / hipPlanRun)
+  // Face toward end-pitch side:   arctan(endRun / hipPlanRun)
+  const bevel1 = Math.atan2(run,    hipPlanRun) * 180 / Math.PI;
+  const bevel2 = Math.atan2(endRun, hipPlanRun) * 180 / Math.PI;
 
   // Populate results
   document.getElementById('rCommon').textContent  = toFtIn(commonLen);
   document.getElementById('aCommon').textContent  = commonAngle.toFixed(2) + '°';
   document.getElementById('rHip').textContent     = toFtIn(hipLen);
-  document.getElementById('aHip').textContent     = hipRiseRun;
+  document.getElementById('aHip').textContent     = hipAngle.toFixed(2) + '°';
 
   if (mixed) {
     document.getElementById('rEnd').textContent   = toFtIn(endLen);
     document.getElementById('aEnd').textContent   = endAngle.toFixed(2) + '°';
-    document.getElementById('aBevel').textContent = `${sideCut1.toFixed(2)}° / ${sideCut2.toFixed(2)}°`;
-    document.getElementById('bevelLabel').textContent = `Side Cut (${p1}:12 / ${p2}:12)`;
+    document.getElementById('aBevel').textContent = `${bevel1.toFixed(2)}° / ${bevel2.toFixed(2)}°`;
+    document.getElementById('bevelLabel').textContent = `Bevel (${p1}:12 face / ${p2}:12 face)`;
     document.getElementById('rEndRow').hidden = false;
     document.getElementById('aEndRow').hidden = false;
   } else {
-    document.getElementById('aBevel').textContent = sideCut1.toFixed(2) + '°';
-    document.getElementById('bevelLabel').textContent = 'Side Cut (miter)';
+    document.getElementById('aBevel').textContent = bevel1.toFixed(2) + '°';
+    document.getElementById('bevelLabel').textContent = 'Bevel / Side Cut';
     document.getElementById('rEndRow').hidden = true;
     document.getElementById('aEndRow').hidden = true;
   }
@@ -240,3 +278,13 @@ function toFtIn(feet) {
   return `${ft}' ${whole}${frac}"`;
 }
 </script>
+
+    </div>
+
+
+</body>
+
+<script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
+    type="text/javascript"></script>
+
+</html>
