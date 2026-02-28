@@ -8,6 +8,8 @@
   link: /hip-calculator.html
 - name: Spindle Calc
   link: /spindle-calculator.html
+- name: Rake Wall
+  link: /rake-wall-calculator.html
 #- name: Blog
  # link: /blog.html
 #- name: Soccer

@@ -1,0 +1,716 @@
+---
+layout: default
+title: Rake Wall Calculator
+---
+
+<style>
+.calculator { max-width: 720px; }
+.calc-section {
+  margin-bottom: 1.25rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--navColour);
+  border-radius: 6px;
+}
+.calc-section h3 {
+  margin: 0 0 0.75rem 0;
+  font-size: 1rem;
+  border-bottom: 1px solid var(--navColour);
+  padding-bottom: 0.4rem;
+}
+.input-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.45rem;
+  flex-wrap: wrap;
+}
+.input-row label.row-label {
+  min-width: 190px;
+  font-size: 0.88rem;
+}
+.ft-in { display: flex; align-items: center; gap: 0.3rem; font-size: 0.88rem; }
+input[type="number"] {
+  width: 54px;
+  padding: 0.28rem 0.3rem;
+  border: 1px solid var(--navColour);
+  border-radius: 4px;
+  background: var(--backgroundColour);
+  color: inherit;
+  font-size: 0.88rem;
+  text-align: right;
+}
+input[type="number"].narrow { width: 44px; }
+input[type="number"].wide { width: 70px; }
+.radio-group { display: flex; gap: 0.8rem; flex-wrap: wrap; }
+.radio-group label {
+  display: flex; align-items: center; gap: 0.25rem;
+  font-size: 0.88rem; cursor: pointer; min-width: auto;
+}
+select {
+  padding: 0.28rem 0.35rem;
+  border: 1px solid var(--navColour);
+  border-radius: 4px;
+  background: var(--backgroundColour);
+  color: inherit;
+  font-size: 0.88rem;
+}
+.btn-calc {
+  display: inline-block;
+  padding: 0.5rem 1.5rem;
+  border: 1px solid var(--navColour);
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  font-size: 0.95rem;
+  cursor: pointer;
+  box-shadow: 2px 2px 0 var(--navColour);
+  transition: transform 0.05s, box-shadow 0.05s;
+  margin-top: 0.5rem;
+}
+.btn-calc:active { transform: translate(2px,2px); box-shadow: none; }
+.btn-sm {
+  padding: 0.22rem 0.6rem;
+  border: 1px solid var(--navColour);
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+  box-shadow: 1px 1px 0 var(--navColour);
+}
+.btn-sm:active { transform: translate(1px,1px); box-shadow: none; }
+.opening-item {
+  border: 1px solid var(--navColour);
+  border-radius: 5px;
+  padding: 0.7rem 0.8rem;
+  margin-bottom: 0.7rem;
+}
+.opening-hdr {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 0.5rem; font-weight: bold; font-size: 0.88rem;
+}
+.hidden { display: none; }
+.error-msg { color: #c0392b; font-size: 0.85rem; margin: 0.4rem 0; }
+#results { display: none; margin-top: 1.5rem; }
+.summary-grid {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.15rem 0.75rem;
+  font-size: 0.88rem;
+  margin-bottom: 0.5rem;
+}
+.summary-grid dt { font-weight: bold; white-space: nowrap; }
+.summary-grid dd { margin: 0; }
+.stud-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+  margin-top: 0.5rem;
+}
+.stud-table th, .stud-table td {
+  border: 1px solid var(--navColour);
+  padding: 0.25rem 0.45rem;
+  text-align: left;
+}
+.stud-table th { background: var(--navColour); color: var(--backgroundColour); }
+.stud-table tr:nth-child(even) td { background: rgba(128,128,128,0.07); }
+.stud-table td.pos-col { text-align: right; font-variant-numeric: tabular-nums; }
+.stud-table td.len-col { text-align: right; font-variant-numeric: tabular-nums; }
+small { opacity: 0.7; }
+</style>
+
+<div class="calculator">
+
+  <div class="calc-section">
+    <h3>Wall Configuration</h3>
+
+    <div class="input-row">
+      <label class="row-label">Wall Type</label>
+      <div class="radio-group">
+        <label><input type="radio" name="wallType" value="shed" checked> Shed</label>
+        <label><input type="radio" name="wallType" value="gable"> Gable</label>
+      </div>
+    </div>
+
+    <div class="input-row">
+      <label class="row-label">Wall Length</label>
+      <div class="ft-in">
+        <input type="number" id="wallLenFt" min="0" value="12" inputmode="numeric"> ft
+        <input type="number" id="wallLenIn" min="0" max="11.9375" step="0.0625" value="0" inputmode="decimal"> in
+      </div>
+    </div>
+
+    <div class="input-row">
+      <label class="row-label">Low-End Height <small>(to top of plate)</small></label>
+      <div class="ft-in">
+        <input type="number" id="lowHtFt" min="0" value="8" inputmode="numeric"> ft
+        <input type="number" id="lowHtIn" min="0" max="11.9375" step="0.0625" value="0" inputmode="decimal"> in
+      </div>
+    </div>
+
+    <div class="input-row">
+      <label class="row-label">Pitch (left side)</label>
+      <div class="ft-in">
+        <input type="number" id="pitch" min="0.1" step="0.25" value="4" inputmode="decimal"> : 12
+      </div>
+    </div>
+
+    <div id="gableOptions" class="hidden">
+      <div class="input-row" style="margin-top:0.4rem;">
+        <label class="row-label">Peak Position</label>
+        <div class="radio-group">
+          <label><input type="radio" name="peakPos" value="center" checked> Center</label>
+          <label><input type="radio" name="peakPos" value="custom"> Custom</label>
+        </div>
+      </div>
+      <div id="peakCustomRow" class="input-row hidden">
+        <label class="row-label">Peak from Left End</label>
+        <div class="ft-in">
+          <input type="number" id="peakFt" min="0" value="6" inputmode="numeric"> ft
+          <input type="number" id="peakIn" min="0" max="11.9375" step="0.0625" value="0" inputmode="decimal"> in
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="calc-section">
+    <h3>Framing</h3>
+    <div class="input-row">
+      <label class="row-label">Stud Spacing</label>
+      <div class="radio-group">
+        <label><input type="radio" name="spacing" value="16" checked> 16" OC</label>
+        <label><input type="radio" name="spacing" value="24"> 24" OC</label>
+      </div>
+    </div>
+    <div class="input-row">
+      <label class="row-label">Top Plate</label>
+      <div class="radio-group">
+        <label><input type="radio" name="topPlate" value="single"> Single (1½")</label>
+        <label><input type="radio" name="topPlate" value="double" checked> Double (3")</label>
+      </div>
+    </div>
+  </div>
+
+  <div class="calc-section">
+    <h3>Sheathing Layout</h3>
+    <div class="input-row">
+      <label class="row-label">Layout End</label>
+      <div class="radio-group">
+        <label><input type="radio" name="layoutEnd" value="left" checked> Left</label>
+        <label><input type="radio" name="layoutEnd" value="right"> Right</label>
+      </div>
+    </div>
+    <div class="input-row">
+      <label class="row-label">Sheathing Overhang</label>
+      <div class="ft-in">
+        <input type="number" id="overhang" min="0" max="47.9375" step="0.0625" value="0" inputmode="decimal"> in
+      </div>
+    </div>
+  </div>
+
+  <div class="calc-section">
+    <h3>Openings</h3>
+    <div id="openingsList"></div>
+    <button class="btn-sm" onclick="addOpening()">+ Add Opening</button>
+  </div>
+
+  <div id="errorMsg" class="error-msg"></div>
+  <button class="btn-calc" onclick="calculate()">Calculate</button>
+
+  <div id="results">
+    <div class="calc-section">
+      <h3>Summary</h3>
+      <div id="summaryContent"></div>
+    </div>
+    <div class="calc-section">
+      <h3>Wall Preview</h3>
+      <div id="svgContent"></div>
+    </div>
+    <div class="calc-section">
+      <h3>Stud List &mdash; <small>positions from <strong id="layoutFromLabel">left</strong> end</small></h3>
+      <div id="studListContent"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const BP = 1.5; // bottom plate thickness
+const HEADER_DEPTHS = { '2x4': 3.5, '2x6': 5.5, '2x8': 7.25, '2x10': 9.25, '2x12': 11.25 };
+let openingCount = 0;
+
+// ── UI helpers ──────────────────────────────────────────────────────────────
+function radio(name) {
+  return document.querySelector(`input[name="${name}"]:checked`)?.value;
+}
+function ftInEl(ftId, inId) {
+  return (parseFloat(document.getElementById(ftId).value) || 0) * 12
+       + (parseFloat(document.getElementById(inId).value) || 0);
+}
+
+function toFtIn(totalInches) {
+  if (totalInches < 0) return '\u2014';
+  const f = Math.floor(totalInches * 16) / 16;
+  const ft = Math.floor(f / 12);
+  const rem = f - ft * 12;
+  const wi = Math.floor(rem);
+  const fn = Math.round((rem - wi) * 16);
+  if (fn === 0) return `${ft}' ${wi}"`;
+  const g = gcd(fn, 16);
+  return `${ft}' ${wi} ${fn/g}/${16/g}"`;
+}
+function gcd(a, b) { return b === 0 ? a : gcd(b, a % b); }
+
+// ── Wall geometry ────────────────────────────────────────────────────────────
+function wallHt(x, p) {
+  if (p.wallType === 'shed') {
+    return p.lowHt + x * p.pitch / 12;
+  } else {
+    return x <= p.peakX
+      ? p.lowHt + x * p.pitch / 12
+      : p.lowHt + (p.wallLen - x) * p.rightPitch / 12;
+  }
+}
+function studLen(x, p) {
+  return wallHt(x, p) - p.topPlateThick - BP;
+}
+// Half the bevel offset (center to long or short point): 0.75" × pitch/12
+function bevelDelta(x, p) {
+  let pitch;
+  if (p.wallType === 'shed') {
+    pitch = p.pitch;
+  } else {
+    if (x < p.peakX - 0.01) pitch = p.pitch;
+    else if (x > p.peakX + 0.01) pitch = p.rightPitch;
+    else pitch = 0;
+  }
+  return 0.75 * pitch / 12;
+}
+
+// ── Opening management ───────────────────────────────────────────────────────
+function addOpening() {
+  openingCount++;
+  const id = openingCount;
+  const div = document.createElement('div');
+  div.className = 'opening-item';
+  div.id = `op-${id}`;
+  div.innerHTML = `
+    <div class="opening-hdr">
+      <span>Opening ${id}</span>
+      <button class="btn-sm" onclick="removeOpening(${id})">Remove</button>
+    </div>
+    <div class="input-row">
+      <label class="row-label">Type</label>
+      <div class="radio-group">
+        <label><input type="radio" name="opType${id}" value="window" checked onchange="refreshOpening(${id})"> Window</label>
+        <label><input type="radio" name="opType${id}" value="door" onchange="refreshOpening(${id})"> Door</label>
+      </div>
+    </div>
+    <div class="input-row">
+      <label class="row-label">Left Edge of RO from Left</label>
+      <div class="ft-in">
+        <input type="number" id="opX${id}Ft" min="0" value="3" inputmode="numeric"> ft
+        <input type="number" id="opX${id}In" min="0" max="11.9375" step="0.0625" value="0" inputmode="decimal"> in
+      </div>
+    </div>
+    <div class="input-row">
+      <label class="row-label">RO Width</label>
+      <div class="ft-in">
+        <input type="number" id="opW${id}Ft" min="0" value="3" inputmode="numeric"> ft
+        <input type="number" id="opW${id}In" min="0" max="11.9375" step="0.0625" value="0" inputmode="decimal"> in
+      </div>
+    </div>
+    <div class="input-row">
+      <label class="row-label">RO Height</label>
+      <div class="ft-in">
+        <input type="number" id="opH${id}Ft" min="0" value="4" inputmode="numeric"> ft
+        <input type="number" id="opH${id}In" min="0" max="11.9375" step="0.0625" value="0" inputmode="decimal"> in
+      </div>
+    </div>
+    <div class="input-row">
+      <label class="row-label">Header Size</label>
+      <select id="opHdrSz${id}" onchange="refreshOpening(${id})">
+        <option value="2x4">2&times;4 (3&frac12;")</option>
+        <option value="2x6">2&times;6 (5&frac12;")</option>
+        <option value="2x8" selected>2&times;8 (7&frac14;")</option>
+        <option value="2x10">2&times;10 (9&frac14;")</option>
+        <option value="2x12">2&times;12 (11&frac14;")</option>
+        <option value="custom">Custom</option>
+      </select>
+      <span id="opHdrCustomWrap${id}" class="hidden ft-in">
+        <input type="number" class="wide" id="opHdrCustom${id}" min="1" step="0.0625" value="7.25" inputmode="decimal"> in
+      </span>
+    </div>
+    <div class="input-row">
+      <label class="row-label">Header Style</label>
+      <div class="radio-group">
+        <label><input type="radio" name="opHStyle${id}" value="level" checked> Level</label>
+        <label><input type="radio" name="opHStyle${id}" value="raked"> Raked</label>
+      </div>
+    </div>
+    <div class="input-row" id="opSillRow${id}">
+      <label class="row-label">Sill Height <small>(RO bottom from floor)</small></label>
+      <div class="ft-in">
+        <input type="number" id="opSill${id}Ft" min="0" value="2" inputmode="numeric"> ft
+        <input type="number" id="opSill${id}In" min="0" max="11.9375" step="0.0625" value="0" inputmode="decimal"> in
+      </div>
+    </div>`;
+  document.getElementById('openingsList').appendChild(div);
+}
+
+function removeOpening(id) {
+  document.getElementById(`op-${id}`)?.remove();
+}
+
+function refreshOpening(id) {
+  const type = document.querySelector(`input[name="opType${id}"]:checked`)?.value;
+  document.getElementById(`opSillRow${id}`)?.classList.toggle('hidden', type === 'door');
+  const hdrSz = document.getElementById(`opHdrSz${id}`)?.value;
+  document.getElementById(`opHdrCustomWrap${id}`)?.classList.toggle('hidden', hdrSz !== 'custom');
+}
+
+// Wall type / peak toggles
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('input[name="wallType"]').forEach(r =>
+    r.addEventListener('change', () => {
+      document.getElementById('gableOptions').classList.toggle('hidden', r.value !== 'gable' || !r.checked);
+    })
+  );
+  document.querySelectorAll('input[name="peakPos"]').forEach(r =>
+    r.addEventListener('change', () => {
+      document.getElementById('peakCustomRow').classList.toggle('hidden', r.value !== 'custom');
+    })
+  );
+});
+
+// ── SVG wall preview ─────────────────────────────────────────────────────────
+function generateWallSVG(studs, openings, p) {
+  const wh = x => wallHt(x, p);
+  const { wallLen, topPlateThick: tpt } = p;
+  const maxHt = p.wallType === 'shed' ? wh(wallLen) : wh(p.peakX);
+  const pad = Math.max(3, wallLen * 0.018);
+  const vbW = wallLen + pad * 2, vbH = maxHt + pad * 2;
+  const tx = `translate(${pad.toFixed(1)},${(pad + maxHt).toFixed(1)}) scale(1,-1)`;
+  const e = [];
+  const f = n => n.toFixed(2);
+
+  // Bottom plate — split at door openings so doorways are open
+  const doorOps = openings.filter(o => o.type === 'door').sort((a, b) => a.x1 - b.x1);
+  let bx = 0;
+  for (const d of doorOps) {
+    if (d.x1 > bx) e.push(`<rect class="ws-plate" x="${f(bx)}" y="0" width="${f(d.x1 - bx)}" height="1.5"/>`);
+    bx = d.x2;
+  }
+  if (bx < wallLen) e.push(`<rect class="ws-plate" x="${f(bx)}" y="0" width="${f(wallLen - bx)}" height="1.5"/>`);
+
+  // Top plate polygon (follows wall profile)
+  const N = 80;
+  const tp1 = Array.from({length: N + 1}, (_, i) => { const x = wallLen * i / N; return `${f(x)},${f(wh(x) - tpt)}`; });
+  const tp2 = Array.from({length: N + 1}, (_, i) => { const x = wallLen * (N - i) / N; return `${f(x)},${f(wh(x))}`; });
+  e.push(`<polygon class="ws-plate" points="${[...tp1, ...tp2].join(' ')}"/>`);
+
+  // Regular studs
+  for (const s of studs) {
+    if (s.type === 'End' || s.type === 'Regular')
+      e.push(`<rect class="ws-stud" x="${f(s.x - .75)}" y="1.5" width="1.5" height="${f(s.length)}"/>`);
+  }
+
+  // Per-opening: headers, cripples, sills, RO outlines
+  for (const op of openings) {
+    const wh1 = wh(op.x1), wh2 = wh(op.x2);
+    const bj = (op.type === 'door' ? 0 : op.sillH) + op.roH; // base jack height (near side)
+    const sd = wh2 - wh1; // signed slope delta
+    const hbn = BP + bj, hbf = BP + bj + sd;
+    const hd = op.headerDepth;
+
+    // Header
+    if (op.headerStyle === 'level') {
+      e.push(`<rect class="ws-header" x="${f(op.x1)}" y="${f(hbn)}" width="${f(op.roW)}" height="${f(hd)}"/>`);
+    } else {
+      e.push(`<polygon class="ws-header" points="${f(op.x1)},${f(hbn)} ${f(op.x2)},${f(hbf)} ${f(op.x2)},${f(hbf + hd)} ${f(op.x1)},${f(hbn + hd)}"/>`);
+    }
+
+    // Cripples above header
+    for (const s of studs.filter(s => s.type === 'Cripple↑' && s.notes === `Op ${op.id}`)) {
+      const t = (s.x - op.x1) / op.roW;
+      const cb = op.headerStyle === 'level' ? hbn + hd : BP + bj + t * sd + hd;
+      e.push(`<rect class="ws-cripple" x="${f(s.x - .75)}" y="${f(cb)}" width="1.5" height="${f(s.length)}"/>`);
+    }
+
+    // Window sill plate + cripples below
+    if (op.type === 'window') {
+      e.push(`<rect class="ws-sill" x="${f(op.x1)}" y="${f(op.sillH)}" width="${f(op.roW)}" height="1.5"/>`);
+      for (const s of studs.filter(s => s.type === 'Cripple↓' && s.notes === `Op ${op.id}`))
+        e.push(`<rect class="ws-cripple" x="${f(s.x - .75)}" y="1.5" width="1.5" height="${f(s.length)}"/>`);
+    }
+
+    // RO dashed outline
+    const rob = op.type === 'door' ? BP : BP + op.sillH;
+    e.push(`<rect class="ws-ro" x="${f(op.x1)}" y="${f(rob)}" width="${f(op.roW)}" height="${f(op.roH)}"/>`);
+  }
+
+  // Kings and jacks — x is the stud center, draw centered on that
+  for (const s of studs.filter(s => s.type === 'King')) {
+    e.push(`<rect class="ws-king" x="${f(s.x - .75)}" y="1.5" width="1.5" height="${f(s.length)}"/>`);
+  }
+  for (const s of studs.filter(s => s.type === 'Jack')) {
+    e.push(`<rect class="ws-jack" x="${f(s.x - .75)}" y="1.5" width="1.5" height="${f(s.length)}"/>`);
+  }
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${f(vbW)} ${f(vbH)}" style="width:100%;display:block;"><style>
+.ws-plate{fill:var(--navColour);opacity:.85}
+.ws-stud{fill:var(--navColour);opacity:.38}
+.ws-king{fill:var(--navColour);opacity:.72}
+.ws-jack{fill:var(--navColour);opacity:.42}
+.ws-cripple{fill:var(--navColour);opacity:.26}
+.ws-header{fill:var(--navColour);opacity:.82}
+.ws-sill{fill:var(--navColour);opacity:.55}
+.ws-ro{fill:none;stroke:var(--navColour);stroke-width:1.2;stroke-dasharray:5 3;opacity:.6}
+</style><g transform="${tx}">${e.join('')}</g></svg>`;
+}
+
+// ── Main calculation ─────────────────────────────────────────────────────────
+function calculate() {
+  const errEl = document.getElementById('errorMsg');
+  errEl.textContent = '';
+
+  const wallType = radio('wallType');
+  const wallLen  = ftInEl('wallLenFt', 'wallLenIn');
+  const lowHt    = ftInEl('lowHtFt', 'lowHtIn');
+  const pitch    = parseFloat(document.getElementById('pitch').value) || 0;
+  const topPlate = radio('topPlate');
+  const topPlateThick = topPlate === 'double' ? 3 : 1.5;
+  const studSpacing = parseInt(radio('spacing'));
+  const layoutEnd = radio('layoutEnd');
+  const overhang  = parseFloat(document.getElementById('overhang').value) || 0;
+
+  if (wallLen <= 0 || lowHt <= 0 || pitch <= 0) {
+    errEl.textContent = 'Enter wall length, height, and pitch.';
+    return;
+  }
+
+  let peakX = wallLen / 2;
+  let rightPitch = pitch;
+  if (wallType === 'gable') {
+    if (radio('peakPos') === 'custom') {
+      peakX = ftInEl('peakFt', 'peakIn');
+      if (peakX <= 0 || peakX >= wallLen) {
+        errEl.textContent = 'Peak must be between 0 and wall length.';
+        return;
+      }
+    }
+    rightPitch = peakX * pitch / (wallLen - peakX);
+  }
+
+  const params = { wallType, wallLen, lowHt, pitch, peakX, rightPitch, topPlateThick, studSpacing, layoutEnd, overhang };
+
+  // Gather openings
+  const openings = [];
+  let opError = '';
+  document.querySelectorAll('.opening-item').forEach(el => {
+    const id = parseInt(el.id.replace('op-', ''));
+    const type = document.querySelector(`input[name="opType${id}"]:checked`)?.value;
+    const x1   = ftInEl(`opX${id}Ft`, `opX${id}In`);
+    const roW  = ftInEl(`opW${id}Ft`, `opW${id}In`);
+    const roH  = ftInEl(`opH${id}Ft`, `opH${id}In`);
+    const x2   = x1 + roW;
+    const hdrSzKey = document.getElementById(`opHdrSz${id}`)?.value;
+    const headerDepth = hdrSzKey === 'custom'
+      ? parseFloat(document.getElementById(`opHdrCustom${id}`)?.value) || 0
+      : HEADER_DEPTHS[hdrSzKey] || 7.25;
+    const headerStyle = document.querySelector(`input[name="opHStyle${id}"]:checked`)?.value;
+    const sillH = type === 'window' ? ftInEl(`opSill${id}Ft`, `opSill${id}In`) : 0;
+
+    if (x2 > wallLen + 0.01) opError = `Opening ${id} extends past wall length.`;
+    if (roW <= 0 || roH <= 0) opError = `Opening ${id} needs a valid width and height.`;
+
+    openings.push({ id, type, x1, x2, roW, roH, headerDepth, headerStyle, sillH });
+  });
+
+  if (opError) { errEl.textContent = opError; return; }
+
+  openings.sort((a, b) => a.x1 - b.x1);
+  for (let i = 1; i < openings.length; i++) {
+    if (openings[i].x1 < openings[i-1].x2 - 0.01) {
+      errEl.textContent = `Openings ${openings[i-1].id} and ${openings[i].id} overlap.`;
+      return;
+    }
+  }
+
+  // ── Build stud x-position set ────────────────────────────────────────────
+  const xSet = new Set();
+  const round3 = v => Math.round(v * 1000) / 1000;
+
+  xSet.add(0);
+  xSet.add(round3(wallLen));
+
+  // OC grid from layout end
+  if (layoutEnd === 'left') {
+    for (let x = studSpacing; x < wallLen - 0.01; x += studSpacing)
+      xSet.add(round3(x));
+  } else {
+    for (let x = wallLen - studSpacing; x > 0.01; x -= studSpacing)
+      xSet.add(round3(x));
+  }
+
+  // Sheet joint positions
+  if (overhang < 48) {
+    const firstJoint = 48 - overhang;
+    if (layoutEnd === 'left') {
+      for (let d = firstJoint; d < wallLen; d += 48) {
+        const p = round3(d);
+        if (p > 0 && p < wallLen && ![...xSet].some(x => Math.abs(x - p) < 0.25))
+          xSet.add(p);
+      }
+    } else {
+      for (let d = firstJoint; d < wallLen; d += 48) {
+        const p = round3(wallLen - d);
+        if (p > 0 && p < wallLen && ![...xSet].some(x => Math.abs(x - p) < 0.25))
+          xSet.add(p);
+      }
+    }
+  }
+
+  // King stud positions (opening edges)
+  for (const op of openings) {
+    xSet.add(round3(op.x1));
+    xSet.add(round3(op.x2));
+  }
+
+  const allX = [...xSet].filter(x => x >= 0 && x <= wallLen + 0.001).sort((a, b) => a - b);
+
+  // ── Classify each position ───────────────────────────────────────────────
+  const studs = [];
+
+  for (const x of allX) {
+    const kingOp   = openings.find(op => Math.abs(x - op.x1) < 0.01 || Math.abs(x - op.x2) < 0.01);
+    const insideOp = openings.find(op => x > op.x1 + 0.01 && x < op.x2 - 0.01);
+
+    if (kingOp) {
+      const isNear = Math.abs(x - kingOp.x1) < 0.01;
+      const wh1 = wallHt(kingOp.x1, params);
+      const wh2 = wallHt(kingOp.x2, params);
+      const baseJack = (kingOp.type === 'door' ? 0 : kingOp.sillH) + kingOp.roH;
+
+      // King — center is 2.25" outside the RO edge (1.5" jack + 0.75" to king center)
+      const kingX = isNear ? x - 2.25 : x + 2.25;
+      studs.push({ x: kingX, type: 'King', length: studLen(kingX, params), bevelType: 'pitch',
+        notes: `Op ${kingOp.id} (${isNear ? 'near' : 'far'})` });
+
+      // Jack — center is 0.75" outside the RO edge
+      const jackX = isNear ? x - 0.75 : x + 0.75;
+      let jackLen;
+      if (kingOp.headerStyle === 'level') {
+        jackLen = baseJack;
+      } else {
+        jackLen = isNear ? baseJack : baseJack + Math.abs(wh2 - wh1);
+      }
+      // Raked header: far jack follows slope (signed delta — negative if downhill to right)
+      if (kingOp.headerStyle !== 'level' && !isNear)
+        jackLen = Math.max(0, baseJack + (wh2 - wh1));
+      studs.push({ x: jackX, type: 'Jack', length: jackLen,
+        bevelType: kingOp.headerStyle === 'level' ? 'square' : 'pitch',
+        notes: `Op ${kingOp.id} (${isNear ? 'near' : 'far'})` });
+
+    } else if (insideOp) {
+      const op = insideOp;
+      const wh1 = wallHt(op.x1, params);
+      const wh2 = wallHt(op.x2, params);
+      const baseJack = (op.type === 'door' ? 0 : op.sillH) + op.roH;
+
+      // Header bottom at this x
+      let hdrBot;
+      if (op.headerStyle === 'level') {
+        hdrBot = BP + baseJack;
+      } else {
+        const t = (x - op.x1) / (op.x2 - op.x1);
+        hdrBot = BP + baseJack + t * (wh2 - wh1); // signed slope delta
+      }
+      const hdrTop = hdrBot + op.headerDepth;
+      const tpBot  = wallHt(x, params) - params.topPlateThick;
+
+      const caLen = tpBot - hdrTop;
+      if (caLen > 0.1)
+        // Level header: angled top only (pitch bevel). Raked header: both ends same angle (square).
+        studs.push({ x, type: 'Cripple\u2191', length: caLen,
+          bevelType: op.headerStyle === 'level' ? 'pitch' : 'square', notes: `Op ${op.id}` });
+
+      if (op.type === 'window' && op.sillH > BP + 0.1) {
+        const cbLen = op.sillH - BP; // from top of BP to underside of sill plate
+        studs.push({ x, type: 'Cripple\u2193', length: cbLen, bevelType: 'square', notes: `Op ${op.id}` });
+      }
+
+    } else {
+      const len = studLen(x, params);
+      if (len > 0.1) {
+        const isEnd = (Math.abs(x) < 0.01 || Math.abs(x - wallLen) < 0.01);
+        studs.push({ x, type: isEnd ? 'End' : 'Regular', length: len, bevelType: 'pitch', notes: '' });
+      }
+    }
+  }
+
+  // ── Display position (from layout end) ───────────────────────────────────
+  const disp = x => layoutEnd === 'left' ? x : wallLen - x;
+
+  // Sort stud list by display position (king before jack at same position)
+  const typeOrder = { 'End': 0, 'Regular': 0, 'Sheet Joint': 0, 'King': 1, 'Jack': 2, 'Cripple↑': 3, 'Cripple↓': 4 };
+  studs.sort((a, b) => {
+    const pd = disp(a.x) - disp(b.x);
+    if (Math.abs(pd) > 0.01) return pd;
+    return (typeOrder[a.type] || 0) - (typeOrder[b.type] || 0);
+  });
+
+  // ── Summary ──────────────────────────────────────────────────────────────
+  let summaryHTML = '<dl class="summary-grid">';
+  summaryHTML += `<dt>Wall</dt><dd>${toFtIn(wallLen)} long &times; ${toFtIn(lowHt)} low-end height</dd>`;
+  if (wallType === 'shed') {
+    const hiHt = wallHt(wallLen, params);
+    const angle = (Math.atan(pitch / 12) * 180 / Math.PI).toFixed(1);
+    summaryHTML += `<dt>Shed</dt><dd>Pitch ${pitch}:12 &mdash; high end ${toFtIn(hiHt)}, top plate angle ${angle}&deg;</dd>`;
+  } else {
+    const peakHt = wallHt(peakX, params);
+    const lAngle = (Math.atan(pitch / 12) * 180 / Math.PI).toFixed(1);
+    const rAngle = (Math.atan(rightPitch / 12) * 180 / Math.PI).toFixed(1);
+    summaryHTML += `<dt>Gable</dt><dd>Peak at ${toFtIn(peakX)} from left, height ${toFtIn(peakHt)}</dd>`;
+    summaryHTML += `<dt>Pitches</dt><dd>Left ${pitch}:12 (${lAngle}&deg;) &mdash; Right ${rightPitch.toFixed(2)}:12 (${rAngle}&deg;)</dd>`;
+  }
+  const tpLabel = topPlate === 'double' ? 'Double (3")' : 'Single (1\u00bd")';
+  summaryHTML += `<dt>Plates</dt><dd>${tpLabel} top, single (1\u00bd") bottom &mdash; ${studSpacing}" OC studs</dd>`;
+  summaryHTML += `<dt>Layout</dt><dd>From ${layoutEnd} end, sheathing overhang ${overhang}"</dd>`;
+  const regCount = studs.filter(s => s.type === 'End' || s.type === 'Regular').length;
+  summaryHTML += `<dt>Studs</dt><dd>${regCount} regular/end + ${studs.filter(s=>s.type==='King').length} kings + ${studs.filter(s=>s.type==='Jack').length} jacks + ${studs.filter(s=>s.type.includes('Cripple')).length} cripples</dd>`;
+  summaryHTML += '</dl>';
+
+  document.getElementById('summaryContent').innerHTML = summaryHTML;
+  document.getElementById('svgContent').innerHTML = generateWallSVG(studs, openings, params);
+  document.getElementById('layoutFromLabel').textContent = layoutEnd;
+
+  // ── Stud table ───────────────────────────────────────────────────────────
+  const layoutLabel = layoutEnd === 'left' ? 'Left' : 'Right';
+  let tbl = `<table class="stud-table"><thead><tr>
+    <th>Pos from ${layoutLabel}</th><th>Type</th><th>Length</th><th>Notes</th>
+  </tr></thead><tbody>`;
+
+  for (const s of studs) {
+    let lenCell;
+    if (s.bevelType === 'pitch') {
+      const delta = bevelDelta(s.x, params);
+      lenCell = `${toFtIn(s.length + delta)} <small>sq to long</small>`;
+    } else {
+      lenCell = toFtIn(s.length);
+    }
+    tbl += `<tr>
+      <td class="pos-col">${toFtIn(disp(s.x))}</td>
+      <td>${s.type}</td>
+      <td class="len-col">${lenCell}</td>
+      <td>${s.notes}</td>
+    </tr>`;
+  }
+  tbl += '</tbody></table>';
+  document.getElementById('studListContent').innerHTML = tbl;
+
+  const resultsEl = document.getElementById('results');
+  resultsEl.style.display = 'block';
+  resultsEl.scrollIntoView({ behavior: 'smooth' });
+}
+</script>
