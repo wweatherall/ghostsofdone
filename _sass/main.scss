@@ -192,7 +192,17 @@ img {
 
 @media only screen and (max-width: 800px) {
   /* For tablets: */
-  nav,
+  body {
+    display: flex;
+    flex-direction: column;
+  }
+
+  nav {
+    order: -1;
+    width: 100%;
+    float: none;
+  }
+
   .content {
     width: 100%;
     float: none;
@@ -210,20 +220,21 @@ img {
 }
 
 @media only screen and (max-width: 500px) {
-  /* For tablets: */
+  /* For phones: */
   .navMenu,
-  .content,
   .rightMenu,
   .contentLeft,
   .contentRight {
     width: 80%;
-    float: left;
+  }
+
+  .content {
+    width: 100%;
   }
 
   nav,
   .rightMenu {
     text-align: center;
-    display: block;
   }
 
   .title {

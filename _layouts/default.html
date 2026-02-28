@@ -38,5 +38,23 @@
 
 <script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
     type="text/javascript"></script>
+<script>
+(function() {
+  if (window.innerWidth > 800) return;
+  if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+  function scrollPastNav() {
+    var nav = document.querySelector('nav');
+    var title = document.querySelector('.title');
+    if (nav && title) {
+      document.body.style.paddingBottom = nav.offsetHeight + 'px';
+      window.scrollTo(0, title.offsetTop);
+    }
+  }
+  window.addEventListener('load', function() {
+    scrollPastNav();
+    requestAnimationFrame(scrollPastNav);
+  });
+})();
+</script>
 
 </html>
