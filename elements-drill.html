@@ -612,9 +612,9 @@ function render() {
   if (isL) { const b=leitnerState.boxes[cur.key]; badge.textContent='box '+b; badge.className='card-box-badge b'+b; }
   else { badge.className='card-box-badge'; }
   const inp = document.getElementById('answerInput');
-  inp.value=''; inp.className='answer-input'; inp.disabled=false; inp.placeholder=m.placeholder;
-  if (answered[idx]==='correct') { inp.value=m.answer(el); inp.className='answer-input correct'; inp.disabled=true; }
-  else if (answered[idx]==='wrong') { inp.className='answer-input wrong'; inp.disabled=true; }
+  inp.value=''; inp.className='answer-input'; inp.disabled=false; inp.readOnly=false; inp.placeholder=m.placeholder;
+  if (answered[idx]==='correct') { inp.value=m.answer(el); inp.className='answer-input correct'; inp.readOnly=true; }
+  else if (answered[idx]==='wrong') { inp.className='answer-input wrong'; inp.readOnly=true; }
   document.getElementById('feedback').textContent='';
   document.getElementById('feedback').className='feedback';
   document.getElementById('card').className='card'+(answered[idx]?' '+answered[idx]:'');
@@ -681,7 +681,7 @@ function checkAnswer() {
   answered[idx]=correct?'correct':'wrong';
   const isRQ = isL ? deck[idx]._requeue : (isRequeue[idx] || false);
   if (!isRQ) answeredCount++;
-  inp.disabled=true; inp.blur(); document.body.tabIndex=-1; document.body.focus();
+  inp.readOnly=true;
   if (isL) {
     const cur2=leitnerState.boxes[cur.key];
     if (correct) {
