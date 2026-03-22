@@ -497,7 +497,7 @@ function render() {
   const mt = isL ? cur.modeType : mode;
   const ion = isL ? cur.ion : deck[idx];
   const m = modeDefs[mt];
-  document.getElementById('promptLabel').textContent = m.label;
+  document.getElementById('promptLabel').textContent = ion.group + ' · ' + m.label;
   document.getElementById('promptText').textContent = m.prompt(ion);
   const counterBase = Math.min(answeredCount + 1, deckOriginalSize) + ' / ' + deckOriginalSize;
   const requeueTotal = deck.length - deckOriginalSize;
