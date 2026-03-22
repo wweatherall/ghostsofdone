@@ -624,6 +624,8 @@ function render() {
     document.getElementById('nextBtn').textContent = idx===deck.length-1 ? 'restart →' : 'next →';
     renderDots();
   }
+  const submitBtn = document.querySelector('.submit-btn');
+  submitBtn.textContent = answered[idx] !== null ? 'Next →' : 'Enter ↵';
   if (answered[idx]===null) { inp.focus(); }
 }
 function renderDots() {
