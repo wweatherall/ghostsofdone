@@ -613,6 +613,7 @@ function render() {
   else { badge.className='card-box-badge'; }
   const inp = document.getElementById('answerInput');
   inp.value=''; inp.className='answer-input'; inp.disabled=false; inp.readOnly=false; inp.placeholder=m.placeholder;
+  inp.inputMode = mt === 'name-mass' ? 'decimal' : 'text';
   if (answered[idx]==='correct') { inp.value=m.answer(el); inp.className='answer-input correct'; inp.readOnly=true; }
   else if (answered[idx]==='wrong') { inp.className='answer-input wrong'; inp.readOnly=true; }
   document.getElementById('feedback').textContent='';
