@@ -184,6 +184,15 @@ small { opacity: 0.7; }
         <label><input type="radio" name="point" value="short"> Short point</label>
       </div>
     </div>
+    <div class="input-row">
+      <label class="row-label">Show lengths as</label>
+      <div class="radio-group">
+        <label><input type="radio" name="units" value="auto" checked> As entered</label>
+        <label><input type="radio" name="units" value="in"> Inches</label>
+        <label><input type="radio" name="units" value="ftin"> Ft &amp; in</label>
+        <label><input type="radio" name="units" value="dash"> 7-5-8</label>
+      </div>
+    </div>
   </div>
 
   <div id="errorMsg" class="error-msg"></div>
@@ -277,16 +286,32 @@ function parseSlope(raw, unit) {
 
 // ── Formatting ───────────────────────────────────────────────────────────────
 function gcd(a, b) { return b === 0 ? a : gcd(b, a % b); }
-function fmt(inches, mode = 'floor') {
+// Output style: 'in' = 49 13/16"   'ftin' = 4' 1 13/16"   'dash' = 4-1-13 (ft-in-16ths)
+let OUT_STYLE = 'ftin';
+function fmt(inches, mode = 'floor', style = OUT_STYLE) {
   if (!isFinite(inches)) return '—';
   const sx = mode === 'floor' ? Math.floor(inches * 16 + 1e-6) : Math.round(inches * 16);
-  const neg = sx < 0, t = Math.abs(sx);
-  const ft = Math.floor(t / 192), rem = t - ft * 192;
-  const wi = Math.floor(rem / 16), n = rem % 16;
-  let frac = '';
-  if (n) { const g = gcd(n, 16); frac = ` ${n / g}/${16 / g}`; }
-  const inPart = wi || !frac ? `${wi}${frac}"` : `${frac.trim()}"`;
-  return (neg ? '-' : '') + (ft ? `${ft}' ${inPart}` : inPart);
+  const neg = sx < 0 ? '-' : '', t = Math.abs(sx);
+  if (style === 'dash') {
+    const ft = Math.floor(t / 192), rem = t - ft * 192;
+    return `${neg}${ft}-${Math.floor(rem / 16)}-${rem % 16}`;
+  }
+  const inchPart = v => {
+    const wi = Math.floor(v / 16), n = v % 16;
+    if (!n) return `${wi}"`;
+    const g = gcd(n, 16), frac = `${n / g}/${16 / g}`;
+    return wi ? `${wi} ${frac}"` : `${frac}"`;
+  };
+  if (style === 'in') return neg + inchPart(t);
+  const ft = Math.floor(t / 192);
+  return neg + (ft ? `${ft}' ` : '') + inchPart(t - ft * 192);
+}
+// Which style did the user type a length in?
+function styleOf(raw) {
+  const s = String(raw).replace(/[‐-―−]/g, '-').trim();
+  if (/['‘’′]|\b(ft|feet|foot)\b/i.test(s)) return 'ftin';
+  if (/^\d+\s*-\s*\d+(\.\d+)?(\s*-\s*\d+(\.\d+)?)?\s*"?$/.test(s)) return 'dash';
+  return 'in';
 }
 
 // ── Live echo of what each field was read as ─────────────────────────────────
@@ -299,7 +324,7 @@ function echoField(el) {
   const bad = isNaN(n);
   el.classList.toggle('bad', bad);
   echo.classList.toggle('bad', bad);
-  echo.textContent = bad ? "can't read that" : '= ' + fmt(n, 'round');
+  echo.textContent = bad ? "can't read that" : '= ' + fmt(n, 'round', 'ftin');
 }
 
 function radio(name) { return document.querySelector(`input[name="${name}"]:checked`)?.value; }
@@ -333,6 +358,8 @@ document.addEventListener('DOMContentLoaded', () => {
 // auto = triggered by editing a field: don't scroll, and don't nag about
 // missing inputs until the first successful calculation.
 function calculate(auto = false) {
+  const unitPref = radio('units');
+  OUT_STYLE = unitPref === 'auto' ? styleOf(document.getElementById('startHt').value) : unitPref;
   const errEl = document.getElementById('errorMsg');
   const res = document.getElementById('results');
   const fail = msg => {
@@ -410,6 +437,8 @@ function calculate(auto = false) {
     : `<dt>Slope</dt><dd>${+pitch.toFixed(3)}:12 ${slope > 0 ? 'rising' : 'falling'} &mdash; cut angle ${angle.toFixed(1)}&deg; off square</dd>`;
   sum += `<dt>Piece width</dt><dd>${fmt(w, 'round')}${count > 1 ? ` <small>(${fmt(measured, 'round')} &divide; ${count} = ${+w.toFixed(4)}")</small>` : ''}</dd>`;
   sum += `<dt>Pieces</dt><dd>${pieces.length}</dd>`;
+  const styleName = { in: 'inches', ftin: 'feet and inches', dash: 'feet-inches-sixteenths' }[OUT_STYLE];
+  sum += `<dt>Shown in</dt><dd>${styleName}${unitPref === 'auto' ? ' <small>(as you entered the start height)</small>' : ''}</dd>`;
   // Sliver at the end? Suggest a starting rip that balances both ends.
   const lastW = pieces[pieces.length - 1].width;
   if (pieces.length > 1 && lastW < Math.min(w / 3, 2)) {
