@@ -227,7 +227,7 @@ small { opacity: 0.7; }
       <div id="svgContent"></div>
     </div>
     <div class="calc-section">
-      <h3>Stud List &mdash; <small>positions from <strong id="layoutFromLabel">left</strong> end</small></h3>
+      <h3>Cut List &mdash; <small>centers from <strong id="layoutFromLabel">left</strong> end</small></h3>
       <div id="studListContent"></div>
     </div>
   </div>
@@ -235,7 +235,8 @@ small { opacity: 0.7; }
 </div>
 
 <script>
-const BP = 1.5; // bottom plate thickness
+const BP = 1.5;   // bottom plate thickness
+const PLY = 1.5;  // thickness of one top-plate ply, measured square to the plate
 const HEADER_DEPTHS = { '2x4': 3.5, '2x6': 5.5, '2x8': 7.25, '2x10': 9.25, '2x12': 11.25 };
 let openingCount = 0;
 
@@ -249,8 +250,8 @@ function ftInEl(ftId, inId) {
 }
 
 function toFtIn(totalInches) {
-  if (totalInches < 0) return '\u2014';
-  const f = Math.floor(totalInches * 16) / 16;
+  if (totalInches < 0) return '—';
+  const f = Math.floor(totalInches * 16 + 1e-6) / 16;
   const ft = Math.floor(f / 12);
   const rem = f - ft * 12;
   const wi = Math.floor(rem);
@@ -262,30 +263,52 @@ function toFtIn(totalInches) {
 function gcd(a, b) { return b === 0 ? a : gcd(b, a % b); }
 
 // ── Wall geometry ────────────────────────────────────────────────────────────
-function wallHt(x, p) {
-  if (p.wallType === 'shed') {
-    return p.lowHt + x * p.pitch / 12;
-  } else {
-    return x <= p.peakX
-      ? p.lowHt + x * p.pitch / 12
-      : p.lowHt + (p.wallLen - x) * p.rightPitch / 12;
+// A "profile" is { f: x => y, breaks: [x...] }: a piecewise-linear line in
+// elevation (y up from the subfloor), with the x positions where it changes slope.
+const flat = y => ({ f: () => y, breaks: [] });
+const sloped = (y0, x0, m) => ({ f: x => y0 + m * (x - x0), breaks: [] });
+
+// Lines (y = a + m·x) along the top of the wall. Shed: one; gable: two.
+function roofLines(p) {
+  if (p.wallType === 'shed') return [{ a: p.lowHt, m: p.pitch / 12 }];
+  return [
+    { a: p.lowHt, m: p.pitch / 12 },
+    { a: p.lowHt + p.wallLen * p.rightPitch / 12, m: -p.rightPitch / 12 },
+  ];
+}
+// Surface `o` inches below the top of the top plate, measured square to the
+// plate. On a slope the plumb (vertical) depth is o / cos θ = o·√(1+m²).
+function plateSurface(p, o) {
+  const ls = roofLines(p).map(l => ({ a: l.a - o * Math.hypot(1, l.m), m: l.m }));
+  const breaks = [];
+  if (ls.length === 2) {
+    const xi = (ls[1].a - ls[0].a) / (ls[0].m - ls[1].m);
+    if (xi > 0 && xi < p.wallLen) breaks.push(xi);
   }
+  return { f: x => Math.min(...ls.map(l => l.a + l.m * x)), breaks };
 }
-function studLen(x, p) {
-  return wallHt(x, p) - p.topPlateThick - BP;
+function wallHt(x, p) { return plateSurface(p, 0).f(x); }
+function slopeAt(x, p) {
+  if (p.wallType === 'shed') return p.pitch / 12;
+  return x < p.peakX ? p.pitch / 12 : -p.rightPitch / 12;
 }
-// Half the bevel offset (center to long or short point): 0.75" × pitch/12
-function bevelDelta(x, p) {
-  let pitch;
-  if (p.wallType === 'shed') {
-    pitch = p.pitch;
-  } else {
-    if (x < p.peakX - 0.01) pitch = p.pitch;
-    else if (x > p.peakX + 0.01) pitch = p.rightPitch;
-    else pitch = 0;
-  }
-  return 0.75 * pitch / 12;
+
+// A framing member spanning xa..xb (plan), between a bottom and a top profile.
+function member(type, xa, xb, bot, top, notes = '') {
+  const inside = x => x > xa + 1e-6 && x < xb - 1e-6;
+  const pts = [xa, ...top.breaks.filter(inside), ...bot.breaks.filter(inside), xb].sort((a, b) => a - b);
+  const lens = pts.map(x => top.f(x) - bot.f(x));
+  const long = Math.max(...lens), short = Math.min(...lens);
+  const topSq = Math.abs(top.f(xa) - top.f(xb)) < 1e-6 && !top.breaks.some(inside);
+  const botSq = Math.abs(bot.f(xa) - bot.f(xb)) < 1e-6 && !bot.breaks.some(inside);
+  let cut;
+  if (top.breaks.some(inside)) cut = 'sq to peak';
+  else if (topSq && botSq) cut = '';
+  else if (topSq !== botSq) cut = 'sq to long';
+  else cut = Math.abs(lens[0] - lens[lens.length - 1]) < 1e-6 ? 'parallel bevels' : 'long to long';
+  return { type, x: (xa + xb) / 2, xa, xb, bot, top, pts, length: long, short, cut, notes };
 }
+const overlaps = (a, b) => a.xa < b.xb - 1e-6 && b.xa < a.xb - 1e-6;
 
 // ── Opening management ───────────────────────────────────────────────────────
 function addOpening() {
@@ -321,7 +344,7 @@ function addOpening() {
       </div>
     </div>
     <div class="input-row">
-      <label class="row-label">RO Height</label>
+      <label class="row-label">RO Height <small>(raked: at left edge)</small></label>
       <div class="ft-in">
         <input type="number" id="opH${id}Ft" min="0" value="4" inputmode="numeric"> ft
         <input type="number" id="opH${id}In" min="0" max="11.9375" step="0.0625" value="0" inputmode="decimal"> in
@@ -349,7 +372,7 @@ function addOpening() {
       </div>
     </div>
     <div class="input-row" id="opSillRow${id}">
-      <label class="row-label">Sill Height <small>(RO bottom from floor)</small></label>
+      <label class="row-label">Sill Height <small>(RO bottom from subfloor)</small></label>
       <div class="ft-in">
         <input type="number" id="opSill${id}Ft" min="0" value="2" inputmode="numeric"> ft
         <input type="number" id="opSill${id}In" min="0" max="11.9375" step="0.0625" value="0" inputmode="decimal"> in
@@ -384,88 +407,57 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ── SVG wall preview ─────────────────────────────────────────────────────────
-function generateWallSVG(studs, openings, p) {
-  const wh = x => wallHt(x, p);
-  const { wallLen, topPlateThick: tpt } = p;
-  const maxHt = p.wallType === 'shed' ? wh(wallLen) : wh(p.peakX);
+function generateWallSVG(members, openings, p) {
+  const { wallLen } = p;
+  const maxHt = p.wallType === 'shed' ? wallHt(wallLen, p) : wallHt(p.peakX, p);
   const pad = Math.max(3, wallLen * 0.018);
   const vbW = wallLen + pad * 2, vbH = maxHt + pad * 2;
-  const tx = `translate(${pad.toFixed(1)},${(pad + maxHt).toFixed(1)}) scale(1,-1)`;
+  const tx = `translate(${pad.toFixed(2)},${(pad + maxHt).toFixed(2)}) scale(1,-1)`;
   const e = [];
-  const f = n => n.toFixed(2);
+  const f = n => n.toFixed(3);
+
+  // Polygon between two profiles from xa to xb, including slope breaks
+  const band = (cls, xa, xb, bot, top) => {
+    const inside = x => x > xa + 1e-6 && x < xb - 1e-6;
+    const bx = [xa, ...bot.breaks.filter(inside), xb].sort((a, b) => a - b);
+    const tX = [xa, ...top.breaks.filter(inside), xb].sort((a, b) => b - a);
+    const pts = [...bx.map(x => `${f(x)},${f(bot.f(x))}`), ...tX.map(x => `${f(x)},${f(top.f(x))}`)];
+    return `<polygon class="${cls}" points="${pts.join(' ')}"/>`;
+  };
 
   // Bottom plate — split at door openings so doorways are open
   const doorOps = openings.filter(o => o.type === 'door').sort((a, b) => a.x1 - b.x1);
   let bx = 0;
   for (const d of doorOps) {
-    if (d.x1 > bx) e.push(`<rect class="ws-plate" x="${f(bx)}" y="0" width="${f(d.x1 - bx)}" height="1.5"/>`);
+    if (d.x1 > bx) e.push(band('ws-plate', bx, d.x1, flat(0), flat(BP)));
     bx = d.x2;
   }
-  if (bx < wallLen) e.push(`<rect class="ws-plate" x="${f(bx)}" y="0" width="${f(wallLen - bx)}" height="1.5"/>`);
+  if (bx < wallLen) e.push(band('ws-plate', bx, wallLen, flat(0), flat(BP)));
 
-  // Top plate polygon (follows wall profile)
-  const N = 80;
-  const tp1 = Array.from({length: N + 1}, (_, i) => { const x = wallLen * i / N; return `${f(x)},${f(wh(x) - tpt)}`; });
-  const tp2 = Array.from({length: N + 1}, (_, i) => { const x = wallLen * (N - i) / N; return `${f(x)},${f(wh(x))}`; });
-  e.push(`<polygon class="ws-plate" points="${[...tp1, ...tp2].join(' ')}"/>`);
+  // Top plate, one band per ply (true depth on the slope, mitred at a gable peak)
+  const plies = Math.round(p.topPlateThick / PLY);
+  for (let k = 0; k < plies; k++)
+    e.push(band('ws-plate', 0, wallLen, plateSurface(p, (k + 1) * PLY), plateSurface(p, k * PLY)));
 
-  // Regular studs
-  for (const s of studs) {
-    if (s.type === 'End' || s.type === 'Regular')
-      e.push(`<rect class="ws-stud" x="${f(s.x - .75)}" y="1.5" width="1.5" height="${f(s.length)}"/>`);
-  }
+  const cls = { End: 'ws-stud', Regular: 'ws-stud', Peak: 'ws-stud', King: 'ws-king', Jack: 'ws-jack',
+                'Cripple↑': 'ws-cripple', 'Cripple↓': 'ws-cripple', Header: 'ws-header', Sill: 'ws-sill' };
+  for (const m of members) e.push(band(cls[m.type], m.xa, m.xb, m.bot, m.top));
 
-  // Per-opening: headers, cripples, sills, RO outlines
+  // RO dashed outlines
   for (const op of openings) {
-    const wh1 = wh(op.x1), wh2 = wh(op.x2);
-    const bj = (op.type === 'door' ? 0 : op.sillH) + op.roH; // base jack height (near side)
-    const sd = wh2 - wh1; // signed slope delta
-    const hbn = BP + bj, hbf = BP + bj + sd;
-    const hd = op.headerDepth;
-
-    // Header
-    if (op.headerStyle === 'level') {
-      e.push(`<rect class="ws-header" x="${f(op.x1)}" y="${f(hbn)}" width="${f(op.roW)}" height="${f(hd)}"/>`);
-    } else {
-      e.push(`<polygon class="ws-header" points="${f(op.x1)},${f(hbn)} ${f(op.x2)},${f(hbf)} ${f(op.x2)},${f(hbf + hd)} ${f(op.x1)},${f(hbn + hd)}"/>`);
-    }
-
-    // Cripples above header
-    for (const s of studs.filter(s => s.type === 'Cripple↑' && s.notes === `Op ${op.id}`)) {
-      const t = (s.x - op.x1) / op.roW;
-      const cb = op.headerStyle === 'level' ? hbn + hd : BP + bj + t * sd + hd;
-      e.push(`<rect class="ws-cripple" x="${f(s.x - .75)}" y="${f(cb)}" width="1.5" height="${f(s.length)}"/>`);
-    }
-
-    // Window sill plate + cripples below
-    if (op.type === 'window') {
-      e.push(`<rect class="ws-sill" x="${f(op.x1)}" y="${f(op.sillH)}" width="${f(op.roW)}" height="1.5"/>`);
-      for (const s of studs.filter(s => s.type === 'Cripple↓' && s.notes === `Op ${op.id}`))
-        e.push(`<rect class="ws-cripple" x="${f(s.x - .75)}" y="1.5" width="1.5" height="${f(s.length)}"/>`);
-    }
-
-    // RO dashed outline
-    const rob = op.type === 'door' ? BP : BP + op.sillH;
-    e.push(`<rect class="ws-ro" x="${f(op.x1)}" y="${f(rob)}" width="${f(op.roW)}" height="${f(op.roH)}"/>`);
-  }
-
-  // Kings and jacks — x is the stud center, draw centered on that
-  for (const s of studs.filter(s => s.type === 'King')) {
-    e.push(`<rect class="ws-king" x="${f(s.x - .75)}" y="1.5" width="1.5" height="${f(s.length)}"/>`);
-  }
-  for (const s of studs.filter(s => s.type === 'Jack')) {
-    e.push(`<rect class="ws-jack" x="${f(s.x - .75)}" y="1.5" width="1.5" height="${f(s.length)}"/>`);
+    const pts = [[op.x1, op.rob], [op.x2, op.rob], [op.x2, op.hb.f(op.x2)], [op.x1, op.hb.f(op.x1)]];
+    e.push(`<polygon class="ws-ro" points="${pts.map(([x, y]) => `${f(x)},${f(y)}`).join(' ')}"/>`);
   }
 
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${f(vbW)} ${f(vbH)}" style="width:100%;display:block;"><style>
-.ws-plate{fill:var(--navColour);opacity:.85}
+.ws-plate{fill:var(--navColour);opacity:.85;stroke:var(--backgroundColour);stroke-width:.25}
 .ws-stud{fill:var(--navColour);opacity:.38}
 .ws-king{fill:var(--navColour);opacity:.72}
-.ws-jack{fill:var(--navColour);opacity:.42}
+.ws-jack{fill:var(--navColour);opacity:.5}
 .ws-cripple{fill:var(--navColour);opacity:.26}
 .ws-header{fill:var(--navColour);opacity:.82}
 .ws-sill{fill:var(--navColour);opacity:.55}
-.ws-ro{fill:none;stroke:var(--navColour);stroke-width:1.2;stroke-dasharray:5 3;opacity:.6}
+.ws-ro{fill:none;stroke:var(--navColour);stroke-width:.6;stroke-dasharray:3 2;opacity:.6}
 </style><g transform="${tx}">${e.join('')}</g></svg>`;
 }
 
@@ -473,38 +465,40 @@ function generateWallSVG(studs, openings, p) {
 function calculate() {
   const errEl = document.getElementById('errorMsg');
   errEl.textContent = '';
+  const fail = msg => { errEl.textContent = msg; document.getElementById('results').style.display = 'none'; };
 
   const wallType = radio('wallType');
   const wallLen  = ftInEl('wallLenFt', 'wallLenIn');
   const lowHt    = ftInEl('lowHtFt', 'lowHtIn');
   const pitch    = parseFloat(document.getElementById('pitch').value) || 0;
   const topPlate = radio('topPlate');
-  const topPlateThick = topPlate === 'double' ? 3 : 1.5;
+  const topPlateThick = topPlate === 'double' ? 2 * PLY : PLY;
   const studSpacing = parseInt(radio('spacing'));
   const layoutEnd = radio('layoutEnd');
   const overhang  = parseFloat(document.getElementById('overhang').value) || 0;
 
-  if (wallLen <= 0 || lowHt <= 0 || pitch <= 0) {
-    errEl.textContent = 'Enter wall length, height, and pitch.';
-    return;
-  }
+  if (wallLen <= 0 || lowHt <= 0 || pitch <= 0) return fail('Enter wall length, height, and pitch.');
 
   let peakX = wallLen / 2;
   let rightPitch = pitch;
   if (wallType === 'gable') {
     if (radio('peakPos') === 'custom') {
       peakX = ftInEl('peakFt', 'peakIn');
-      if (peakX <= 0 || peakX >= wallLen) {
-        errEl.textContent = 'Peak must be between 0 and wall length.';
-        return;
-      }
+      if (peakX <= 0 || peakX >= wallLen) return fail('Peak must be between 0 and wall length.');
     }
     rightPitch = peakX * pitch / (wallLen - peakX);
   }
 
   const params = { wallType, wallLen, lowHt, pitch, peakX, rightPitch, topPlateThick, studSpacing, layoutEnd, overhang };
+  const U = plateSurface(params, topPlateThick); // underside of the top plate
+  const BOT = flat(BP);                           // top of the bottom plate
 
-  // Gather openings
+  // Shortest point on the underside of the top plate between xa and xb
+  const minUnder = (xa, xb) =>
+    Math.min(U.f(xa), U.f(xb), ...U.breaks.filter(x => x > xa && x < xb).map(U.f));
+  if (minUnder(0, wallLen) - BP < 1) return fail('Wall is too short for the plates.');
+
+  // ── Openings ───────────────────────────────────────────────────────────────
   const openings = [];
   let opError = '';
   document.querySelectorAll('.opening-item').forEach(el => {
@@ -519,191 +513,160 @@ function calculate() {
       ? parseFloat(document.getElementById(`opHdrCustom${id}`)?.value) || 0
       : HEADER_DEPTHS[hdrSzKey] || 7.25;
     const headerStyle = document.querySelector(`input[name="opHStyle${id}"]:checked`)?.value;
-    const sillH = type === 'window' ? ftInEl(`opSill${id}Ft`, `opSill${id}In`) : 0;
+    // RO heights are measured from the subfloor. Door jacks stand on the bottom plate.
+    const rob = type === 'window' ? ftInEl(`opSill${id}Ft`, `opSill${id}In`) : 0;
 
-    if (x2 > wallLen + 0.01) opError = `Opening ${id} extends past wall length.`;
-    if (roW <= 0 || roH <= 0) opError = `Opening ${id} needs a valid width and height.`;
+    if (roW <= 0 || roH <= 0) { opError ||= `Opening ${id} needs a valid width and height.`; return; }
+    if (x1 - 3 < 1.5 - 1e-6 || x2 + 3 > wallLen - 1.5 + 1e-6)
+      { opError ||= `Opening ${id} is too close to the end of the wall (needs 4½" for end stud, king and jack).`; return; }
+    if (type === 'window' && rob < 2 * BP)
+      { opError ||= `Opening ${id}: sill height must be at least 3" (bottom plate + sill).`; return; }
 
-    openings.push({ id, type, x1, x2, roW, roH, headerDepth, headerStyle, sillH });
+    const hx1 = x1 - 1.5, hx2 = x2 + 1.5; // header bears on the jacks
+    const roTop = rob + roH;
+    let hb, ht;
+    if (headerStyle === 'level') {
+      hb = flat(roTop); ht = flat(roTop + headerDepth);
+    } else {
+      if (wallType === 'gable' && hx1 < peakX && hx2 > peakX)
+        { opError ||= `Opening ${id}: a raked header can't cross the peak — use a level header.`; return; }
+      const m = slopeAt((hx1 + hx2) / 2, params);
+      hb = sloped(roTop, x1, m);
+      ht = sloped(roTop + headerDepth * Math.hypot(1, m), x1, m);
+    }
+    if (Math.min(hb.f(hx1), hb.f(hx2)) < BP + 1)
+      { opError ||= `Opening ${id}: RO is too short.`; return; }
+    if (Math.max(ht.f(hx1), ht.f(hx2)) > minUnder(hx1, hx2) + 1e-6)
+      { opError ||= `Opening ${id}: header runs into the top plate. Lower the opening or use a smaller header.`; return; }
+
+    openings.push({ id, type, x1, x2, roW, roH, rob, headerDepth, headerStyle, hdrSzKey, hx1, hx2, hb, ht });
   });
-
-  if (opError) { errEl.textContent = opError; return; }
+  if (opError) return fail(opError);
 
   openings.sort((a, b) => a.x1 - b.x1);
   for (let i = 1; i < openings.length; i++) {
-    if (openings[i].x1 < openings[i-1].x2 - 0.01) {
-      errEl.textContent = `Openings ${openings[i-1].id} and ${openings[i].id} overlap.`;
-      return;
-    }
+    if (openings[i].x1 - 3 < openings[i-1].x2 + 3 - 1e-6)
+      return fail(`Openings ${openings[i-1].id} and ${openings[i].id} overlap (their kings collide).`);
   }
 
-  // ── Build stud x-position set ────────────────────────────────────────────
+  // ── Fixed members: end studs, peak stud, opening framing ───────────────────
+  const members = [];
+  members.push(member('End', 0, 1.5, BOT, U));
+  members.push(member('End', wallLen - 1.5, wallLen, BOT, U));
+
+  for (const op of openings) {
+    const n = `Op ${op.id}`;
+    members.push(member('King', op.x1 - 3, op.x1 - 1.5, BOT, U, `${n} (left)`));
+    members.push(member('Jack', op.x1 - 1.5, op.x1, BOT, op.hb, `${n} (left)`));
+    members.push(member('Jack', op.x2, op.x2 + 1.5, BOT, op.hb, `${n} (right)`));
+    members.push(member('King', op.x2 + 1.5, op.x2 + 3, BOT, U, `${n} (right)`));
+    const hdr = member('Header', op.hx1, op.hx2, op.hb, op.ht, n);
+    hdr.hdrLabel = op.hdrSzKey === 'custom' ? `${op.headerDepth}" deep` : op.hdrSzKey.replace('x', '×');
+    members.push(hdr);
+    if (op.type === 'window') members.push(member('Sill', op.x1, op.x2, flat(op.rob - BP), flat(op.rob), n));
+  }
+  const fixed = [...members];
+
+  // Gable: a stud under the peak, where the top plates meet
+  if (wallType === 'gable') {
+    const pk = { xa: peakX - 0.75, xb: peakX + 0.75 };
+    const inOpening = openings.some(op => pk.xb > op.x1 - 3 && pk.xa < op.x2 + 3);
+    if (!inOpening && pk.xa > 1.5 && pk.xb < wallLen - 1.5)
+      fixed.push(members[members.push(member('Peak', pk.xa, pk.xb, BOT, U, 'under plate joint')) - 1]);
+  }
+
+  // ── Layout positions (stud centres): OC grid + sheet joints ────────────────
   const xSet = new Set();
   const round3 = v => Math.round(v * 1000) / 1000;
-
-  xSet.add(0);
-  xSet.add(round3(wallLen));
-
-  // OC grid from layout end
   if (layoutEnd === 'left') {
-    for (let x = studSpacing; x < wallLen - 0.01; x += studSpacing)
-      xSet.add(round3(x));
+    for (let x = studSpacing; x < wallLen - 0.01; x += studSpacing) xSet.add(round3(x));
   } else {
-    for (let x = wallLen - studSpacing; x > 0.01; x -= studSpacing)
-      xSet.add(round3(x));
+    for (let x = wallLen - studSpacing; x > 0.01; x -= studSpacing) xSet.add(round3(x));
   }
-
-  // Sheet joint positions
   if (overhang < 48) {
-    const firstJoint = 48 - overhang;
-    if (layoutEnd === 'left') {
-      for (let d = firstJoint; d < wallLen; d += 48) {
-        const p = round3(d);
-        if (p > 0 && p < wallLen && ![...xSet].some(x => Math.abs(x - p) < 0.25))
-          xSet.add(p);
-      }
-    } else {
-      for (let d = firstJoint; d < wallLen; d += 48) {
-        const p = round3(wallLen - d);
-        if (p > 0 && p < wallLen && ![...xSet].some(x => Math.abs(x - p) < 0.25))
-          xSet.add(p);
-      }
+    for (let d = 48 - overhang; d < wallLen; d += 48) {
+      const pos = round3(layoutEnd === 'left' ? d : wallLen - d);
+      if (pos > 0 && pos < wallLen && ![...xSet].some(x => Math.abs(x - pos) < 0.25)) xSet.add(pos);
     }
   }
 
-  // King stud positions (opening edges)
-  for (const op of openings) {
-    xSet.add(round3(op.x1));
-    xSet.add(round3(op.x2));
-  }
-
-  const allX = [...xSet].filter(x => x >= 0 && x <= wallLen + 0.001).sort((a, b) => a - b);
-
-  // ── Classify each position ───────────────────────────────────────────────
-  const studs = [];
-
-  for (const x of allX) {
-    const kingOp   = openings.find(op => Math.abs(x - op.x1) < 0.01 || Math.abs(x - op.x2) < 0.01);
-    const insideOp = openings.find(op => x > op.x1 + 0.01 && x < op.x2 - 0.01);
-
-    if (kingOp) {
-      const isNear = Math.abs(x - kingOp.x1) < 0.01;
-      const wh1 = wallHt(kingOp.x1, params);
-      const wh2 = wallHt(kingOp.x2, params);
-      const baseJack = (kingOp.type === 'door' ? 0 : kingOp.sillH) + kingOp.roH;
-
-      // King — center is 2.25" outside the RO edge (1.5" jack + 0.75" to king center)
-      const kingX = isNear ? x - 2.25 : x + 2.25;
-      studs.push({ x: kingX, type: 'King', length: studLen(kingX, params), bevelType: 'pitch',
-        notes: `Op ${kingOp.id} (${isNear ? 'near' : 'far'})` });
-
-      // Jack — center is 0.75" outside the RO edge
-      const jackX = isNear ? x - 0.75 : x + 0.75;
-      let jackLen;
-      if (kingOp.headerStyle === 'level') {
-        jackLen = baseJack;
-      } else {
-        jackLen = isNear ? baseJack : baseJack + Math.abs(wh2 - wh1);
+  for (const x of [...xSet].sort((a, b) => a - b)) {
+    const body = { xa: x - 0.75, xb: x + 0.75 };
+    // Over an opening (above the header, between the kings): cripples
+    const op = openings.find(o => body.xa >= o.hx1 - 1e-6 && body.xb <= o.hx2 + 1e-6);
+    if (op) {
+      if (fixed.some(m => m.type === 'Peak' && overlaps(m, body))) continue;
+      const up = member('Cripple↑', body.xa, body.xb, op.ht, U, `Op ${op.id}`);
+      if (Math.min(...up.pts.map(px => U.f(px) - op.ht.f(px))) > 0.25) members.push(up);
+      if (op.type === 'window' && op.rob - 2 * BP > 0.25) {
+        // Below the sill, keep the cripple between the jacks
+        const c = Math.min(Math.max(x, op.x1 + 0.75), op.x2 - 0.75);
+        members.push(member('Cripple↓', c - 0.75, c + 0.75, BOT, flat(op.rob - BP), `Op ${op.id}`));
       }
-      // Raked header: far jack follows slope (signed delta — negative if downhill to right)
-      if (kingOp.headerStyle !== 'level' && !isNear)
-        jackLen = Math.max(0, baseJack + (wh2 - wh1));
-      studs.push({ x: jackX, type: 'Jack', length: jackLen,
-        bevelType: kingOp.headerStyle === 'level' ? 'square' : 'pitch',
-        notes: `Op ${kingOp.id} (${isNear ? 'near' : 'far'})` });
-
-    } else if (insideOp) {
-      const op = insideOp;
-      const wh1 = wallHt(op.x1, params);
-      const wh2 = wallHt(op.x2, params);
-      const baseJack = (op.type === 'door' ? 0 : op.sillH) + op.roH;
-
-      // Header bottom at this x
-      let hdrBot;
-      if (op.headerStyle === 'level') {
-        hdrBot = BP + baseJack;
-      } else {
-        const t = (x - op.x1) / (op.x2 - op.x1);
-        hdrBot = BP + baseJack + t * (wh2 - wh1); // signed slope delta
-      }
-      const hdrTop = hdrBot + op.headerDepth;
-      const tpBot  = wallHt(x, params) - params.topPlateThick;
-
-      const caLen = tpBot - hdrTop;
-      if (caLen > 0.1)
-        // Level header: angled top only (pitch bevel). Raked header: both ends same angle (square).
-        studs.push({ x, type: 'Cripple\u2191', length: caLen,
-          bevelType: op.headerStyle === 'level' ? 'pitch' : 'square', notes: `Op ${op.id}` });
-
-      if (op.type === 'window' && op.sillH > BP + 0.1) {
-        const cbLen = op.sillH - BP; // from top of BP to underside of sill plate
-        studs.push({ x, type: 'Cripple\u2193', length: cbLen, bevelType: 'square', notes: `Op ${op.id}` });
-      }
-
-    } else {
-      const len = studLen(x, params);
-      if (len > 0.1) {
-        const isEnd = (Math.abs(x) < 0.01 || Math.abs(x - wallLen) < 0.01);
-        studs.push({ x, type: isEnd ? 'End' : 'Regular', length: len, bevelType: 'pitch', notes: '' });
-      }
+      continue;
     }
+    // Skip a layout stud that would collide with an end, king, jack or peak stud
+    if (fixed.some(m => m.type !== 'Header' && m.type !== 'Sill' && overlaps(m, body))) continue;
+    members.push(member('Regular', body.xa, body.xb, BOT, U));
   }
 
   // ── Display position (from layout end) ───────────────────────────────────
   const disp = x => layoutEnd === 'left' ? x : wallLen - x;
-
-  // Sort stud list by display position (king before jack at same position)
-  const typeOrder = { 'End': 0, 'Regular': 0, 'Sheet Joint': 0, 'King': 1, 'Jack': 2, 'Cripple↑': 3, 'Cripple↓': 4 };
-  studs.sort((a, b) => {
+  const typeOrder = { 'End': 0, 'Regular': 0, 'Peak': 0, 'King': 1, 'Jack': 2, 'Header': 3, 'Cripple↑': 4, 'Sill': 5, 'Cripple↓': 6 };
+  members.sort((a, b) => {
     const pd = disp(a.x) - disp(b.x);
     if (Math.abs(pd) > 0.01) return pd;
     return (typeOrder[a.type] || 0) - (typeOrder[b.type] || 0);
   });
 
   // ── Summary ──────────────────────────────────────────────────────────────
+  const count = t => members.filter(m => t.includes(m.type)).length;
   let summaryHTML = '<dl class="summary-grid">';
   summaryHTML += `<dt>Wall</dt><dd>${toFtIn(wallLen)} long &times; ${toFtIn(lowHt)} low-end height</dd>`;
   if (wallType === 'shed') {
     const hiHt = wallHt(wallLen, params);
     const angle = (Math.atan(pitch / 12) * 180 / Math.PI).toFixed(1);
-    summaryHTML += `<dt>Shed</dt><dd>Pitch ${pitch}:12 &mdash; high end ${toFtIn(hiHt)}, top plate angle ${angle}&deg;</dd>`;
+    summaryHTML += `<dt>Shed</dt><dd>Pitch ${pitch}:12 &mdash; high end ${toFtIn(hiHt)}, stud bevel ${angle}&deg;</dd>`;
   } else {
     const peakHt = wallHt(peakX, params);
     const lAngle = (Math.atan(pitch / 12) * 180 / Math.PI).toFixed(1);
     const rAngle = (Math.atan(rightPitch / 12) * 180 / Math.PI).toFixed(1);
     summaryHTML += `<dt>Gable</dt><dd>Peak at ${toFtIn(peakX)} from left, height ${toFtIn(peakHt)}</dd>`;
-    summaryHTML += `<dt>Pitches</dt><dd>Left ${pitch}:12 (${lAngle}&deg;) &mdash; Right ${rightPitch.toFixed(2)}:12 (${rAngle}&deg;)</dd>`;
+    summaryHTML += `<dt>Pitches</dt><dd>Left ${pitch}:12 (${lAngle}&deg;) &mdash; Right ${+rightPitch.toFixed(2)}:12 (${rAngle}&deg;)</dd>`;
   }
-  const tpLabel = topPlate === 'double' ? 'Double (3")' : 'Single (1\u00bd")';
-  summaryHTML += `<dt>Plates</dt><dd>${tpLabel} top, single (1\u00bd") bottom &mdash; ${studSpacing}" OC studs</dd>`;
+  const tpLabel = topPlate === 'double' ? 'Double (3")' : 'Single (1½")';
+  const plumb = topPlateThick * Math.hypot(1, pitch / 12);
+  summaryHTML += `<dt>Plates</dt><dd>${tpLabel} top (${toFtIn(plumb).replace(/^0' /, '')} plumb on the ${pitch}:12 slope), single (1½") bottom &mdash; ${studSpacing}" OC studs</dd>`;
   summaryHTML += `<dt>Layout</dt><dd>From ${layoutEnd} end, sheathing overhang ${overhang}"</dd>`;
-  const regCount = studs.filter(s => s.type === 'End' || s.type === 'Regular').length;
-  summaryHTML += `<dt>Studs</dt><dd>${regCount} regular/end + ${studs.filter(s=>s.type==='King').length} kings + ${studs.filter(s=>s.type==='Jack').length} jacks + ${studs.filter(s=>s.type.includes('Cripple')).length} cripples</dd>`;
+  summaryHTML += `<dt>Studs</dt><dd>${count(['End', 'Regular', 'Peak'])} full + ${count(['King'])} kings + ${count(['Jack'])} jacks + ${count(['Cripple↑', 'Cripple↓'])} cripples</dd>`;
   summaryHTML += '</dl>';
 
   document.getElementById('summaryContent').innerHTML = summaryHTML;
-  document.getElementById('svgContent').innerHTML = generateWallSVG(studs, openings, params);
+  document.getElementById('svgContent').innerHTML = generateWallSVG(members, openings, params);
   document.getElementById('layoutFromLabel').textContent = layoutEnd;
 
-  // ── Stud table ───────────────────────────────────────────────────────────
+  // ── Cut list ─────────────────────────────────────────────────────────────
   const layoutLabel = layoutEnd === 'left' ? 'Left' : 'Right';
   let tbl = `<table class="stud-table"><thead><tr>
-    <th>Pos from ${layoutLabel}</th><th>Type</th><th>Length</th><th>Notes</th>
+    <th>Center from ${layoutLabel}</th><th>Type</th><th>Length</th><th>Notes</th>
   </tr></thead><tbody>`;
 
-  for (const s of studs) {
-    let lenCell;
-    if (s.bevelType === 'pitch') {
-      const delta = bevelDelta(s.x, params);
-      lenCell = `${toFtIn(s.length + delta)} <small>sq to long</small>`;
+  for (const m of members) {
+    let lenCell, notes = m.notes;
+    if (m.type === 'Header') {
+      const m0 = (m.bot.f(m.xb) - m.bot.f(m.xa)) / (m.xb - m.xa);
+      lenCell = toFtIn((m.xb - m.xa) * Math.hypot(1, m0));
+      notes = `${m.hdrLabel} ${m.notes}${Math.abs(m0) > 1e-9 ? ', plumb cut both ends' : ''}`;
+    } else if (m.type === 'Sill') {
+      lenCell = toFtIn(m.xb - m.xa);
     } else {
-      lenCell = toFtIn(s.length);
+      lenCell = toFtIn(m.length) + (m.cut ? ` <small>${m.cut}</small>` : '');
     }
     tbl += `<tr>
-      <td class="pos-col">${toFtIn(disp(s.x))}</td>
-      <td>${s.type}</td>
+      <td class="pos-col">${toFtIn(disp(m.x))}</td>
+      <td>${m.type}</td>
       <td class="len-col">${lenCell}</td>
-      <td>${s.notes}</td>
+      <td>${notes}</td>
     </tr>`;
   }
   tbl += '</tbody></table>';
