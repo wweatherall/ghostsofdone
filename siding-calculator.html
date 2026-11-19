@@ -1,0 +1,456 @@
+---
+layout: default
+title: Siding Calculator
+---
+
+<style>
+.calculator { max-width: 720px; }
+.calc-section {
+  margin-bottom: 1.25rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--navColour);
+  border-radius: 6px;
+}
+.calc-section h3 {
+  margin: 0 0 0.75rem 0;
+  font-size: 1rem;
+  border-bottom: 1px solid var(--navColour);
+  padding-bottom: 0.4rem;
+}
+.input-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.45rem;
+  flex-wrap: wrap;
+}
+.input-row label.row-label {
+  min-width: 190px;
+  font-size: 0.88rem;
+}
+input.len {
+  width: 110px;
+  padding: 0.28rem 0.4rem;
+  border: 1px solid var(--navColour);
+  border-radius: 4px;
+  background: var(--backgroundColour);
+  color: inherit;
+  font-size: 0.95rem;
+}
+input.len.short { width: 60px; }
+input.len.bad { border-color: #c0392b; }
+.echo { font-size: 0.8rem; opacity: 0.7; min-width: 6rem; }
+.echo.bad { color: #c0392b; opacity: 1; }
+.radio-group { display: flex; gap: 0.8rem; flex-wrap: wrap; }
+.radio-group label {
+  display: flex; align-items: center; gap: 0.25rem;
+  font-size: 0.88rem; cursor: pointer;
+}
+select {
+  padding: 0.28rem 0.35rem;
+  border: 1px solid var(--navColour);
+  border-radius: 4px;
+  background: var(--backgroundColour);
+  color: inherit;
+  font-size: 0.88rem;
+}
+.btn-calc {
+  display: inline-block;
+  padding: 0.5rem 1.5rem;
+  border: 1px solid var(--navColour);
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  font-size: 0.95rem;
+  cursor: pointer;
+  box-shadow: 2px 2px 0 var(--navColour);
+  transition: transform 0.05s, box-shadow 0.05s;
+  margin-top: 0.5rem;
+}
+.btn-calc:active { transform: translate(2px,2px); box-shadow: none; }
+.hint { font-size: 0.78rem; opacity: 0.7; margin: 0 0 0.6rem 0; }
+.hidden { display: none; }
+.error-msg { color: #c0392b; font-size: 0.85rem; margin: 0.4rem 0; }
+#results { display: none; margin-top: 1.5rem; }
+.summary-grid {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.15rem 0.75rem;
+  font-size: 0.88rem;
+  margin-bottom: 0.5rem;
+}
+.summary-grid dt { font-weight: bold; white-space: nowrap; }
+.summary-grid dd { margin: 0; }
+.cut-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  margin-top: 0.5rem;
+}
+.cut-table th, .cut-table td {
+  border: 1px solid var(--navColour);
+  padding: 0.3rem 0.45rem;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.cut-table th { background: var(--navColour); color: var(--backgroundColour); }
+.cut-table tr:nth-child(even) td { background: rgba(128,128,128,0.07); }
+.cut-table td.len { font-weight: bold; font-size: 0.95rem; }
+.cut-table td.note { text-align: left; font-size: 0.78rem; }
+small { opacity: 0.7; }
+</style>
+
+<div class="calculator">
+
+  <p class="hint">Measurements in inches unless you say otherwise: <code>5 1/2</code>, <code>5-1/2</code>, <code>1'5 1/2"</code>, or feet-inches-sixteenths like <code>7-5-8</code> (= 7' 5 8/16").</p>
+
+  <div class="calc-section">
+    <h3>Section</h3>
+    <div class="input-row">
+      <label class="row-label">Enter as</label>
+      <div class="radio-group">
+        <label><input type="radio" name="mode" value="slope" checked> Length + slope</label>
+        <label><input type="radio" name="mode" value="heights"> Two heights</label>
+      </div>
+    </div>
+
+    <div class="input-row">
+      <label class="row-label" id="startLbl">Height at start</label>
+      <input type="text" class="len" id="startHt" data-len autocomplete="off" autocapitalize="off" spellcheck="false" value="48">
+      <span class="echo" id="startHt-echo"></span>
+    </div>
+
+    <div id="slopeInputs">
+      <div class="input-row">
+        <label class="row-label">Section length <small>(horizontal)</small></label>
+        <input type="text" class="len" id="secLen" data-len autocomplete="off" autocapitalize="off" spellcheck="false" value="10'">
+        <span class="echo" id="secLen-echo"></span>
+      </div>
+      <div class="input-row">
+        <label class="row-label">Slope</label>
+        <input type="text" class="len short" id="slope" autocomplete="off" autocapitalize="off" spellcheck="false" value="4">
+        <select id="slopeUnit">
+          <option value="pitch" selected>: 12</option>
+          <option value="deg">degrees</option>
+        </select>
+        <div class="radio-group">
+          <label><input type="radio" name="dir" value="up" checked> Rises</label>
+          <label><input type="radio" name="dir" value="down"> Falls</label>
+        </div>
+      </div>
+    </div>
+
+    <div id="heightInputs" class="hidden">
+      <div class="input-row">
+        <label class="row-label">Height at end</label>
+        <input type="text" class="len" id="endHt" data-len autocomplete="off" autocapitalize="off" spellcheck="false" value="88">
+        <span class="echo" id="endHt-echo"></span>
+      </div>
+      <div class="input-row">
+        <label class="row-label">Horizontal distance <small>(start to end)</small></label>
+        <input type="text" class="len" id="dist" data-len autocomplete="off" autocapitalize="off" spellcheck="false" value="10'">
+        <span class="echo" id="dist-echo"></span>
+      </div>
+    </div>
+    <p class="hint">Heights are from the level bottom edge of the siding up to the sloped line, measured at the start and end of the section.</p>
+  </div>
+
+  <div class="calc-section">
+    <h3>Pieces</h3>
+    <div class="input-row">
+      <label class="row-label">Width measured</label>
+      <input type="text" class="len" id="pieceW" data-len autocomplete="off" autocapitalize="off" spellcheck="false" value="">
+      <span class="echo" id="pieceW-echo"></span>
+    </div>
+    <div class="input-row">
+      <label class="row-label">Number of pieces measured</label>
+      <input type="text" class="len short" id="pieceN" inputmode="numeric" autocomplete="off" value="1">
+      <span class="echo" id="pieceN-echo"></span>
+    </div>
+    <p class="hint">Press several pieces together and measure across all of them for a more accurate width. The calculator divides by the count.</p>
+    <div class="input-row">
+      <label class="row-label">First piece</label>
+      <div class="radio-group">
+        <label><input type="radio" name="first" value="full" checked> Full piece</label>
+        <label><input type="radio" name="first" value="rip"> Ripped to</label>
+      </div>
+      <input type="text" class="len" id="firstW" data-len autocomplete="off" autocapitalize="off" spellcheck="false" value="">
+      <span class="echo" id="firstW-echo"></span>
+    </div>
+    <div class="input-row">
+      <label class="row-label">Measure to</label>
+      <div class="radio-group">
+        <label><input type="radio" name="point" value="long" checked> Long point</label>
+        <label><input type="radio" name="point" value="short"> Short point</label>
+      </div>
+    </div>
+  </div>
+
+  <div id="errorMsg" class="error-msg"></div>
+  <button class="btn-calc" onclick="calculate()">Calculate</button>
+
+  <div id="results">
+    <div class="calc-section">
+      <h3>Summary</h3>
+      <div id="summaryContent"></div>
+    </div>
+    <div class="calc-section">
+      <h3>Preview</h3>
+      <div id="svgContent"></div>
+    </div>
+    <div class="calc-section">
+      <h3>Cut List &mdash; <small>lengths rounded down to 1/16"</small></h3>
+      <div id="cutList"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── Parsing ──────────────────────────────────────────────────────────────────
+// Accepts: 5 | 5.5 | 1/2 | 5 1/2 | 5-1/2 | 5 1/2" | 1' | 1'5 1/2" | 1' 5-1/2
+//          7-5     (feet-inches)
+//          7-5-8   (feet-inches-sixteenths = 7' 5 8/16")
+// Returns inches, or NaN if it can't make sense of it.
+function parseInches(s) {
+  s = s.trim();
+  let m = s.match(/^(\d+(?:\.\d*)?|\.\d+)$/);            // 5 | 5.5 | .5 | 5.
+  if (m) return parseFloat(m[1]);
+  m = s.match(/^(?:(\d+)(?:\s+|-))?(\d+)\/(\d+)$/);       // 11/16 | 5 1/2 | 5-1/2
+  if (m) {
+    const den = parseInt(m[3], 10);
+    if (den === 0) return NaN;
+    return (m[1] ? parseInt(m[1], 10) : 0) + parseInt(m[2], 10) / den;
+  }
+  return NaN;
+}
+const UNICODE_FRACTIONS = { '\u00bd': '1/2', '\u00bc': '1/4', '\u00be': '3/4', '\u215b': '1/8', '\u215c': '3/8', '\u215d': '5/8', '\u215e': '7/8', '\u2153': '1/3', '\u2154': '2/3' };
+function parseLength(raw) {
+  let s = String(raw)
+    .replace(/[‘’′´`]/g, "'")      // smart/prime feet marks
+    .replace(/[“”″]|''/g, '"')            // smart/prime inch marks
+    .replace(/[\u2010-\u2015\u2212]/g, '-')            // phone dashes -> hyphen
+    .replace(/(\d)?([\u00bc-\u00be\u2153\u2154\u215b-\u215e])/g, (_, d, f) => (d ? d + ' ' : '') + UNICODE_FRACTIONS[f])
+    .replace(/\s*-\s*/g, '-')
+    .replace(/\s+/g, ' ').trim();
+  if (!s) return NaN;
+  s = s.replace(/\s*(in|inch|inches)\.?$/i, '"');
+  s = s.replace(/\s*(ft|feet|foot)\.?/i, "'");
+  const noQuote = s.replace(/"$/, '').trim();
+
+  // Feet-inches-sixteenths: 7-5-8
+  let m = noQuote.match(/^(\d+)-(\d+(?:\.\d+)?)-(\d+(?:\.\d+)?)$/);
+  if (m) return parseFloat(m[1]) * 12 + parseFloat(m[2]) + parseFloat(m[3]) / 16;
+  // Feet-inches: 7-5 or 7-5 1/2
+  m = noQuote.match(/^(\d+)-(\d+(?:\.\d+)?)$/);
+  if (m) return parseFloat(m[1]) * 12 + parseFloat(m[2]);
+  m = noQuote.match(/^(\d+)-(\d+ \d+\/\d+)$/);
+  if (m) { const inch = parseInches(m[2]); return isNaN(inch) ? NaN : parseFloat(m[1]) * 12 + inch; }
+
+  // Feet mark: 1'5 1/2"  /  1' 5-1/2  /  1'
+  let feet = 0;
+  const fi = s.indexOf("'");
+  if (fi >= 0) {
+    const fpart = s.slice(0, fi).trim();
+    if (!/^\d+(\.\d+)?$/.test(fpart)) return NaN;
+    feet = parseFloat(fpart);
+    s = s.slice(fi + 1).trim().replace(/^-\s*/, '');
+    if (!s.replace('"', '').trim()) return feet * 12;
+  }
+  s = s.replace(/"$/, '').trim();
+  const inches = parseInches(s);
+  return isNaN(inches) ? NaN : feet * 12 + inches;
+}
+
+// Slope as rise per inch of run (unsigned)
+function parseSlope(raw, unit) {
+  let s = String(raw).trim();
+  if (unit === 'deg') {
+    const d = parseFloat(s);
+    return isNaN(d) || d < 0 || d >= 90 ? NaN : Math.tan(d * Math.PI / 180);
+  }
+  const m = s.match(/^(.+?)\s*[:/]\s*12$/);   // "4/12", "4 1/2:12"
+  if (m) s = m[1];
+  const rise = parseInches(s);
+  return isNaN(rise) ? NaN : rise / 12;
+}
+
+// ── Formatting ───────────────────────────────────────────────────────────────
+function gcd(a, b) { return b === 0 ? a : gcd(b, a % b); }
+function fmt(inches, mode = 'floor') {
+  if (!isFinite(inches)) return '—';
+  const sx = mode === 'floor' ? Math.floor(inches * 16 + 1e-6) : Math.round(inches * 16);
+  const neg = sx < 0, t = Math.abs(sx);
+  const ft = Math.floor(t / 192), rem = t - ft * 192;
+  const wi = Math.floor(rem / 16), n = rem % 16;
+  let frac = '';
+  if (n) { const g = gcd(n, 16); frac = ` ${n / g}/${16 / g}`; }
+  const inPart = wi || !frac ? `${wi}${frac}"` : `${frac.trim()}"`;
+  return (neg ? '-' : '') + (ft ? `${ft}' ${inPart}` : inPart);
+}
+
+// ── Live echo of what each field was read as ─────────────────────────────────
+function echoField(el) {
+  const echo = document.getElementById(el.id + '-echo');
+  if (!echo) return;
+  const v = el.value.trim();
+  if (!v) { echo.textContent = ''; el.classList.remove('bad'); echo.classList.remove('bad'); return; }
+  const n = parseLength(v);
+  const bad = isNaN(n);
+  el.classList.toggle('bad', bad);
+  echo.classList.toggle('bad', bad);
+  echo.textContent = bad ? "can't read that" : '= ' + fmt(n, 'round');
+}
+
+function radio(name) { return document.querySelector(`input[name="${name}"]:checked`)?.value; }
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('input[data-len]').forEach(el => {
+    el.addEventListener('input', () => echoField(el));
+    echoField(el);
+  });
+  document.querySelectorAll('input[name="mode"]').forEach(r => r.addEventListener('change', () => {
+    const heights = radio('mode') === 'heights';
+    document.getElementById('slopeInputs').classList.toggle('hidden', heights);
+    document.getElementById('heightInputs').classList.toggle('hidden', !heights);
+  }));
+  // Typing a first-piece width selects "Ripped to"; clearing it goes back to "Full piece"
+  const firstW = document.getElementById('firstW');
+  firstW.addEventListener('input', () => {
+    document.querySelector(`input[name="first"][value="${firstW.value.trim() ? 'rip' : 'full'}"]`).checked = true;
+  });
+  document.querySelector('input[name="first"][value="rip"]').addEventListener('change', () => {
+    if (!firstW.value.trim()) firstW.focus();
+  });
+  document.querySelectorAll('input').forEach(el => el.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); calculate(); }
+  }));
+  // Recalculate whenever a box is finished with or a choice changes
+  document.querySelector('.calculator').addEventListener('change', () => calculate(true));
+});
+
+// ── Calculation ──────────────────────────────────────────────────────────────
+// auto = triggered by editing a field: don't scroll, and don't nag about
+// missing inputs until the first successful calculation.
+function calculate(auto = false) {
+  const errEl = document.getElementById('errorMsg');
+  const res = document.getElementById('results');
+  const fail = msg => {
+    if (auto && res.style.display !== 'block') { errEl.textContent = ''; return; }
+    errEl.textContent = msg; res.style.display = 'none';
+  };
+  errEl.textContent = '';
+
+  const val = (id, label) => {
+    const n = parseLength(document.getElementById(id).value);
+    if (isNaN(n)) throw `Can't read ${label}.`;
+    return n;
+  };
+
+  let startHt, secLen, slope; // slope: signed rise per inch of run, going from the start
+  try {
+    startHt = val('startHt', 'height at start');
+    if (radio('mode') === 'slope') {
+      secLen = val('secLen', 'section length');
+      const s = parseSlope(document.getElementById('slope').value, document.getElementById('slopeUnit').value);
+      if (isNaN(s)) throw "Can't read the slope.";
+      slope = radio('dir') === 'down' ? -s : s;
+    } else {
+      const endHt = val('endHt', 'height at end');
+      secLen = val('dist', 'horizontal distance');
+      if (secLen > 0) slope = (endHt - startHt) / secLen;
+    }
+  } catch (msg) { return fail(msg); }
+
+  if (startHt <= 0) return fail('Height at start must be more than 0.');
+  if (secLen <= 0) return fail('Section length must be more than 0.');
+  const endHt = startHt + slope * secLen;
+  if (endHt <= 0) return fail(`Height at end works out to ${fmt(endHt, 'round')}; check the slope and length.`);
+
+  let measured, count;
+  try { measured = val('pieceW', 'the width measured'); } catch (msg) { return fail(msg); }
+  const countRaw = document.getElementById('pieceN').value.trim();
+  count = /^\d+$/.test(countRaw) ? parseInt(countRaw, 10) : NaN;
+  if (!(count >= 1)) return fail('Number of pieces measured must be a whole number, 1 or more.');
+  if (measured <= 0) return fail('Width measured must be more than 0.');
+  const w = measured / count;
+  if (w < 1) return fail(`Each piece works out to ${fmt(w, 'round')} wide. Check the width and the number of pieces measured.`);
+  if (secLen / w > 1000) return fail(`That's over 1000 pieces. Check the section length and piece width.`);
+
+  let firstW = w;
+  if (radio('first') === 'rip') {
+    try { firstW = val('firstW', 'the first piece width'); } catch (msg) { return fail(msg); }
+    if (firstW <= 0) return fail('First piece width must be more than 0.');
+    if (firstW > w + 1e-6) return fail(`First piece (${fmt(firstW, 'round')}) is wider than a full piece (${fmt(w, 'round')}).`);
+  }
+
+  // ── Lay out pieces from the start ────────────────────────────────────────
+  const ht = x => startHt + slope * x;
+  const pieces = [];
+  let x = 0, i = 0;
+  while (x < secLen - 1 / 32) {
+    const width = Math.min(i === 0 ? firstW : w, secLen - x);
+    const a = ht(x), b = ht(x + width);
+    pieces.push({ n: ++i, x, width, short: Math.min(a, b), long: Math.max(a, b),
+                  ripped: (i === 1 && radio('first') === 'rip') || width < w - 1 / 32 });
+    x += width;
+  }
+
+  const point = radio('point');
+  const flat = Math.abs(slope) < 1e-9;
+  const longSide = slope > 0 ? 'far' : 'start';
+
+  // ── Summary ──────────────────────────────────────────────────────────────
+  const angle = Math.atan(Math.abs(slope)) * 180 / Math.PI;
+  const pitch = Math.abs(slope) * 12;
+  let sum = '<dl class="summary-grid">';
+  sum += `<dt>Section</dt><dd>${fmt(secLen, 'round')} long, ${fmt(startHt, 'round')} at start to ${fmt(endHt, 'round')} at end</dd>`;
+  sum += flat
+    ? `<dt>Slope</dt><dd>Level &mdash; square cuts</dd>`
+    : `<dt>Slope</dt><dd>${+pitch.toFixed(3)}:12 ${slope > 0 ? 'rising' : 'falling'} &mdash; cut angle ${angle.toFixed(1)}&deg; off square</dd>`;
+  sum += `<dt>Piece width</dt><dd>${fmt(w, 'round')}${count > 1 ? ` <small>(${fmt(measured, 'round')} &divide; ${count} = ${+w.toFixed(4)}")</small>` : ''}</dd>`;
+  sum += `<dt>Pieces</dt><dd>${pieces.length}</dd>`;
+  // Sliver at the end? Suggest a starting rip that balances both ends.
+  const lastW = pieces[pieces.length - 1].width;
+  if (pieces.length > 1 && lastW < Math.min(w / 3, 2)) {
+    const r = secLen - Math.floor(secLen / w + 1e-9) * w;
+    const bal = (r + w) / 2;
+    sum += `<dt style="color:#c0392b">Check</dt><dd>Last piece is only ${fmt(lastW, 'floor')}. Ripping the first piece to ${fmt(bal, 'floor')} makes both end pieces about that wide.</dd>`;
+  }
+  if (!flat) sum += `<dt>Long point</dt><dd>On the edge toward the ${longSide === 'far' ? 'end' : 'start'} of the section (uphill side)</dd>`;
+  sum += '</dl>';
+  document.getElementById('summaryContent').innerHTML = sum;
+
+  // ── Preview ──────────────────────────────────────────────────────────────
+  const maxH = Math.max(startHt, endHt), pad = Math.max(secLen, maxH) * 0.02;
+  const f = n => n.toFixed(3);
+  let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${f(-pad)} ${f(-pad)} ${f(secLen + 2 * pad)} ${f(maxH + 2 * pad)}" style="width:100%;max-height:60vh;display:block;">`;
+  svg += `<g transform="translate(0,${f(maxH)}) scale(1,-1)">`;
+  for (const p of pieces) {
+    const x2 = p.x + p.width;
+    svg += `<polygon points="${f(p.x)},0 ${f(x2)},0 ${f(x2)},${f(ht(x2))} ${f(p.x)},${f(ht(p.x))}" style="fill:var(--navColour);opacity:${p.n % 2 ? .28 : .42};stroke:var(--backgroundColour);stroke-width:${f(Math.max(secLen, maxH) / 600)}"/>`;
+  }
+  svg += '</g>';
+  const fs = Math.max(secLen, maxH) / 40;
+  if (pieces.length <= 60) for (const p of pieces) {
+    svg += `<text x="${f(p.x + p.width / 2)}" y="${f(maxH - fs * 0.6)}" text-anchor="middle" style="font-size:${f(Math.min(fs, p.width * 0.8))}px;fill:var(--backgroundColour);font-family:sans-serif">${p.n}</text>`;
+  }
+  svg += '</svg>';
+  document.getElementById('svgContent').innerHTML = svg;
+
+  // ── Cut list ─────────────────────────────────────────────────────────────
+  let tbl = `<table class="cut-table"><thead><tr>
+    <th>#</th><th>Width</th><th>From start</th><th>${point === 'long' ? 'Long' : 'Short'} point</th><th style="text-align:left">Note</th>
+  </tr></thead><tbody>`;
+  for (const p of pieces) {
+    const note = p.ripped ? `rip to ${fmt(p.width, 'floor')}` : '';
+    tbl += `<tr><td>${p.n}</td><td>${fmt(p.width, 'round')}</td><td>${fmt(p.x, 'round')}</td>
+      <td class="len">${fmt(point === 'long' ? p.long : p.short, 'floor')}</td><td class="note">${note}</td></tr>`;
+  }
+  tbl += '</tbody></table>';
+  document.getElementById('cutList').innerHTML = tbl;
+
+  res.style.display = 'block';
+  if (!auto) res.scrollIntoView({ behavior: 'smooth' });
+}
+</script>

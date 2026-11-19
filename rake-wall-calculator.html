@@ -101,6 +101,7 @@ select {
 }
 .summary-grid dt { font-weight: bold; white-space: nowrap; }
 .summary-grid dd { margin: 0; }
+.hint-sm { margin: 0.1rem 0 0 0; }
 .stud-table {
   width: 100%;
   border-collapse: collapse;
@@ -189,10 +190,6 @@ small { opacity: 0.7; }
         <label><input type="radio" name="topPlate" value="double" checked> Double (3")</label>
       </div>
     </div>
-  </div>
-
-  <div class="calc-section">
-    <h3>Sheathing Layout</h3>
     <div class="input-row">
       <label class="row-label">Layout End</label>
       <div class="radio-group">
@@ -201,11 +198,43 @@ small { opacity: 0.7; }
       </div>
     </div>
     <div class="input-row">
-      <label class="row-label">Sheathing Overhang</label>
+      <label class="row-label">First Stud <small>(center from layout end)</small></label>
+      <div class="radio-group">
+        <label><input type="radio" name="firstStud" value="auto" checked> Auto</label>
+        <label><input type="radio" name="firstStud" value="custom"> Custom</label>
+      </div>
+      <div class="ft-in">
+        <input type="number" class="wide" id="firstStudIn" min="0" step="0.0625" inputmode="decimal" placeholder="e.g. 16"> in
+      </div>
+    </div>
+    <p class="hint-sm"><small>Auto lines the studs up with the sheet edge at the layout end. Use Custom for an engineered layout.</small></p>
+  </div>
+
+  <div class="calc-section">
+    <h3>Sheathing <small>&mdash; 4&times;8 laid flat, 4' courses, joints staggered 4'</small></h3>
+    <div class="input-row">
+      <label class="row-label">Start From</label>
+      <div class="radio-group">
+        <label><input type="radio" name="sheathStart" value="auto" checked> Auto</label>
+        <label><input type="radio" name="sheathStart" value="left"> Left</label>
+        <label><input type="radio" name="sheathStart" value="right"> Right</label>
+      </div>
+    </div>
+    <div class="input-row">
+      <label class="row-label">Bottom Course Starts With</label>
+      <div class="radio-group">
+        <label><input type="radio" name="courseStart" value="auto" checked> Auto</label>
+        <label><input type="radio" name="courseStart" value="full"> Full sheet</label>
+        <label><input type="radio" name="courseStart" value="half"> Half sheet</label>
+      </div>
+    </div>
+    <div class="input-row">
+      <label class="row-label">Overhang <small>(past the start end)</small></label>
       <div class="ft-in">
         <input type="number" id="overhang" min="0" max="47.9375" step="0.0625" value="0" inputmode="decimal"> in
       </div>
     </div>
+    <p class="hint-sm"><small>Auto tries both ends and both staggers, and picks the one that needs the least extra framing behind joints. Joints that land in a door or window need none.</small></p>
   </div>
 
   <div class="calc-section">
@@ -379,10 +408,12 @@ function addOpening() {
       </div>
     </div>`;
   document.getElementById('openingsList').appendChild(div);
+  calculate(true);
 }
 
 function removeOpening(id) {
   document.getElementById(`op-${id}`)?.remove();
+  calculate(true);
 }
 
 function refreshOpening(id) {
@@ -404,6 +435,12 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('peakCustomRow').classList.toggle('hidden', r.value !== 'custom');
     })
   );
+  const fsIn = document.getElementById('firstStudIn');
+  fsIn.addEventListener('input', () => {
+    document.querySelector(`input[name="firstStud"][value="${fsIn.value.trim() ? 'custom' : 'auto'}"]`).checked = true;
+  });
+  // Recalculate whenever a box is finished with or a choice changes
+  document.querySelector('.calculator').addEventListener('change', () => calculate(true));
 });
 
 // ── SVG wall preview ─────────────────────────────────────────────────────────
@@ -443,6 +480,17 @@ function generateWallSVG(members, openings, p) {
                 'Cripple↑': 'ws-cripple', 'Cripple↓': 'ws-cripple', Header: 'ws-header', Sill: 'ws-sill' };
   for (const m of members) e.push(band(cls[m.type], m.xa, m.xb, m.bot, m.top));
 
+  // Sheathing courses and joints, clipped to the wall outline
+  if (p.sheath) {
+    const top = plateSurface(p, 0);
+    const outline = [[0, 0], [wallLen, 0], [wallLen, top.f(wallLen)], ...top.breaks.map(x => [x, top.f(x)]).reverse(), [0, top.f(0)]];
+    e.push(`<clipPath id="wallClip"><polygon points="${outline.map(([x, y]) => `${f(x)},${f(y)}`).join(' ')}"/></clipPath>`);
+    let g = '';
+    for (let y = 48; y < maxHt; y += 48) g += `<line x1="0" y1="${f(y)}" x2="${f(wallLen)}" y2="${f(y)}"/>`;
+    for (const j of p.sheath.joints) g += `<line x1="${f(j.x)}" y1="${f(j.y0)}" x2="${f(j.x)}" y2="${f(j.y1)}"/>`;
+    e.push(`<g class="ws-sheet" clip-path="url(#wallClip)">${g}</g>`);
+  }
+
   // RO dashed outlines
   for (const op of openings) {
     const pts = [[op.x1, op.rob], [op.x2, op.rob], [op.x2, op.hb.f(op.x2)], [op.x1, op.hb.f(op.x1)]];
@@ -457,15 +505,21 @@ function generateWallSVG(members, openings, p) {
 .ws-cripple{fill:var(--navColour);opacity:.26}
 .ws-header{fill:var(--navColour);opacity:.82}
 .ws-sill{fill:var(--navColour);opacity:.55}
+.ws-sheet line{stroke:#c0392b;stroke-width:.6;stroke-dasharray:4 2.5;opacity:.75}
 .ws-ro{fill:none;stroke:var(--navColour);stroke-width:.6;stroke-dasharray:3 2;opacity:.6}
 </style><g transform="${tx}">${e.join('')}</g></svg>`;
 }
 
 // ── Main calculation ─────────────────────────────────────────────────────────
-function calculate() {
+// auto = triggered by editing a field: don't scroll, and don't nag about
+// errors until the first successful calculation.
+function calculate(auto = false) {
   const errEl = document.getElementById('errorMsg');
   errEl.textContent = '';
-  const fail = msg => { errEl.textContent = msg; document.getElementById('results').style.display = 'none'; };
+  const fail = msg => {
+    if (auto && document.getElementById('results').style.display !== 'block') return;
+    errEl.textContent = msg; document.getElementById('results').style.display = 'none';
+  };
 
   const wallType = radio('wallType');
   const wallLen  = ftInEl('wallLenFt', 'wallLenIn');
@@ -476,8 +530,15 @@ function calculate() {
   const studSpacing = parseInt(radio('spacing'));
   const layoutEnd = radio('layoutEnd');
   const overhang  = parseFloat(document.getElementById('overhang').value) || 0;
+  const firstStudMode = radio('firstStud');
+  const firstStudX = parseFloat(document.getElementById('firstStudIn').value);
+  const sheathStart = radio('sheathStart');
+  const courseStart = radio('courseStart');
 
   if (wallLen <= 0 || lowHt <= 0 || pitch <= 0) return fail('Enter wall length, height, and pitch.');
+  if (overhang < 0 || overhang >= 48) return fail('Sheathing overhang must be between 0 and 48".');
+  if (firstStudMode === 'custom' && !(firstStudX >= 0 && firstStudX < wallLen))
+    return fail('Enter the first stud position (center, inches from the layout end).');
 
   let peakX = wallLen / 2;
   let rightPitch = pitch;
@@ -534,9 +595,9 @@ function calculate() {
       hb = sloped(roTop, x1, m);
       ht = sloped(roTop + headerDepth * Math.hypot(1, m), x1, m);
     }
-    if (Math.min(hb.f(hx1), hb.f(hx2)) < BP + 1)
-      { opError ||= `Opening ${id}: RO is too short.`; return; }
-    if (Math.max(ht.f(hx1), ht.f(hx2)) > minUnder(hx1, hx2) + 1e-6)
+    if (Math.min(hb.f(x1), hb.f(x2)) - rob < 1 || Math.min(hb.f(hx1), hb.f(hx2)) < BP + 1)
+      { opError ||= `Opening ${id}: RO is too short${headerStyle === 'raked' ? ' at its low side' : ''}.`; return; }
+    if ([hx1, hx2, ...U.breaks.filter(x => x > hx1 && x < hx2)].some(x => ht.f(x) > U.f(x) + 1e-6))
       { opError ||= `Opening ${id}: header runs into the top plate. Lower the opening or use a smaller header.`; return; }
 
     openings.push({ id, type, x1, x2, roW, roH, rob, headerDepth, headerStyle, hdrSzKey, hx1, hx2, hb, ht });
@@ -575,22 +636,20 @@ function calculate() {
       fixed.push(members[members.push(member('Peak', pk.xa, pk.xb, BOT, U, 'under plate joint')) - 1]);
   }
 
-  // ── Layout positions (stud centres): OC grid + sheet joints ────────────────
-  const xSet = new Set();
-  const round3 = v => Math.round(v * 1000) / 1000;
-  if (layoutEnd === 'left') {
-    for (let x = studSpacing; x < wallLen - 0.01; x += studSpacing) xSet.add(round3(x));
-  } else {
-    for (let x = wallLen - studSpacing; x > 0.01; x -= studSpacing) xSet.add(round3(x));
+  // ── Layout positions (stud centres) ──────────────────────────────────────
+  // Auto: measured from the sheet edge, which hangs `overhang` past the layout
+  // end, so 4' and 8' joints land on layout. Custom: first stud as entered.
+  const centres = [];
+  const firstD = firstStudMode === 'custom' ? firstStudX : studSpacing - overhang;
+  for (let d = firstD; d < wallLen; d += studSpacing) {
+    if (d <= 0) continue;
+    centres.push(layoutEnd === 'left' ? d : wallLen - d);
   }
-  if (overhang < 48) {
-    for (let d = 48 - overhang; d < wallLen; d += 48) {
-      const pos = round3(layoutEnd === 'left' ? d : wallLen - d);
-      if (pos > 0 && pos < wallLen && ![...xSet].some(x => Math.abs(x - pos) < 0.25)) xSet.add(pos);
-    }
-  }
+  centres.sort((a, b) => a - b);
+  const solid = fixed.filter(m => ['End', 'King', 'Jack', 'Peak'].includes(m.type));
+  const warnings = [];
 
-  for (const x of [...xSet].sort((a, b) => a - b)) {
+  for (const x of centres) {
     const body = { xa: x - 0.75, xb: x + 0.75 };
     // Over an opening (above the header, between the kings): cripples
     const op = openings.find(o => body.xa >= o.hx1 - 1e-6 && body.xb <= o.hx2 + 1e-6);
@@ -601,14 +660,138 @@ function calculate() {
       if (op.type === 'window' && op.rob - 2 * BP > 0.25) {
         // Below the sill, keep the cripple between the jacks
         const c = Math.min(Math.max(x, op.x1 + 0.75), op.x2 - 0.75);
-        members.push(member('Cripple↓', c - 0.75, c + 0.75, BOT, flat(op.rob - BP), `Op ${op.id}`));
+        const down = { xa: c - 0.75, xb: c + 0.75 };
+        if (!members.some(m => m.type === 'Cripple↓' && overlaps(m, down)))
+          members.push(member('Cripple↓', down.xa, down.xb, BOT, flat(op.rob - BP), `Op ${op.id}`));
       }
       continue;
     }
-    // Skip a layout stud that would collide with an end, king, jack or peak stud
-    if (fixed.some(m => m.type !== 'Header' && m.type !== 'Sill' && overlaps(m, body))) continue;
+    // A layout stud that runs into end, king, jack or peak framing is dropped.
+    // If a sheathing joint needs it, the sheathing pass below adds framing back.
+    if (solid.some(m => overlaps(m, body))) continue;
     members.push(member('Regular', body.xa, body.xb, BOT, U));
   }
+
+  // ── Sheathing: 4×8 sheets laid flat, 4' courses, 8' sheets, 4' stagger ───
+  const BEAR = 0.375;                       // nail line in from a sheet edge
+  const wallTop = plateSurface(params, 0);
+  const maxHt = wallType === 'shed' ? Math.max(wallTop.f(0), wallTop.f(wallLen)) : wallTop.f(peakX);
+  const plates = [{ type: 'Plate', xa: 0, xb: wallLen, bot: flat(0), top: BOT },
+                  { type: 'Plate', xa: 0, xb: wallLen, bot: U, top: wallTop }];
+  const isHoriz = m => m.type === 'Plate' || m.type === 'Header' || m.type === 'Sill';
+  const cut = (ivs, a, b) => ivs.flatMap(([p, q]) => b <= p || a >= q ? [[p, q]]
+    : [[p, Math.min(q, a)], [Math.max(p, b), q]].filter(([u, v]) => v - u > 1e-3));
+  // 2D clash between two framing members (pointwise in y across their shared x)
+  const clash = (A, B) => {
+    const l = Math.max(A.xa, B.xa), r = Math.min(A.xb, B.xb);
+    if (r - l < 1e-6) return false;
+    const xs = [l, r, (l + r) / 2, ...[A, B].flatMap(m => [...m.top.breaks, ...m.bot.breaks])].filter(x => x >= l && x <= r);
+    return xs.some(x => Math.min(A.top.f(x), B.top.f(x)) - Math.max(A.bot.f(x), B.bot.f(x)) > 1e-3);
+  };
+
+  const jointsFor = (start, fullFirst) => {
+    const out = [];
+    for (let c = 0; c * 48 < maxHt; c++) {
+      const full = (c % 2 === 0) === fullFirst;      // course starts with a full 8' sheet
+      for (let e = full ? 96 : 48; e - overhang < wallLen; e += 96) {
+        const d = e - overhang;
+        if (d <= 1e-6) continue;
+        const x = start === 'left' ? d : wallLen - d;
+        const y0 = c * 48, y1 = Math.min(c * 48 + 48, wallTop.f(x));
+        if (y1 - y0 > 1e-3) out.push({ x, y0, y1, course: c + 1 });
+      }
+    }
+    return out;
+  };
+  // Heights on line x (a nail line beside a joint) that have sheathing on them
+  const needAt = (x, y0, y1) => {
+    let need = [[y0, y1]];
+    for (const o of openings) if (x > o.x1 + 1e-6 && x < o.x2 - 1e-6) need = cut(need, o.rob, o.hb.f(x));
+    return need;
+  };
+  // Unbacked heights on each nail line of a joint, given the framing list
+  const gapsFor = (j, framing) => [-BEAR, BEAR].map(dx => {
+    const x = j.x + dx;
+    const yTop = Math.min(j.y1, wallTop.f(x));
+    // Off the end of the wall, or the course only grazes the top here: nothing to back
+    if (x < 1e-6 || x > wallLen - 1e-6 || yTop - j.y0 < 1e-3) return { x, gaps: [] };
+    let g = needAt(x, j.y0, yTop);
+    for (const m of framing) if (x >= m.xa - 1e-6 && x <= m.xb + 1e-6) g = cut(g, m.bot.f(x), m.top.f(x));
+    return { x, gaps: g };
+  });
+  const unbacked = (joints, framing) => joints.map(j => ({ j, sides: gapsFor(j, framing) }))
+    .filter(r => r.sides.some(sd => sd.gaps.length));
+
+  const starts = sheathStart === 'auto' ? [layoutEnd, layoutEnd === 'left' ? 'right' : 'left'] : [sheathStart];
+  const fulls = courseStart === 'auto' ? [true, false] : [courseStart === 'full'];
+  const framing0 = [...members, ...plates];
+  let best = null;
+  const tried = [];
+  for (const st of starts) for (const ff of fulls) {
+    const joints = jointsFor(st, ff);
+    const bad = unbacked(joints, framing0);
+    const len = bad.reduce((t, r) => t + r.sides.reduce((u, sd) => u + sd.gaps.reduce((v, [a, b]) => v + b - a, 0), 0), 0);
+    const opt = { start: st, fullFirst: ff, joints, bad, len };
+    tried.push(opt);
+    if (!best || bad.length < best.bad.length || (bad.length === best.bad.length && len < best.len - 1e-6)) best = opt;
+  }
+
+  // Add framing behind any joint that still needs it
+  let added = 0;
+  for (const { j } of best.bad) {
+    for (let pass = 0; pass < 4; pass++) {
+      const sides = gapsFor(j, [...members, ...plates]).filter(sd => sd.gaps.length);
+      if (!sides.length) break;
+      const [ga, gb] = sides[0].gaps[0], ym = (ga + gb) / 2, sx = sides[0].x;
+      // The bay this gap sits in, on the nail line that needs it: between the
+      // horizontal members above and below
+      const hz = [...members.filter(isHoriz), ...plates].filter(m => sx >= m.xa - 1e-6 && sx <= m.xb + 1e-6);
+      const below = hz.filter(m => m.top.f(sx) <= ym + 1e-6).sort((a, b) => b.top.f(sx) - a.top.f(sx))[0];
+      const above = hz.filter(m => m.bot.f(sx) >= ym - 1e-6).sort((a, b) => a.bot.f(sx) - b.bot.f(sx))[0];
+      if (!below || !above) break;
+      const type = below.type === 'Header' ? 'Cripple↑' : above.type === 'Sill' ? 'Cripple↓' : 'Regular';
+      const make = (xa, xb) => member(type, xa, xb, below.top, above.bot, 'sheathing joint');
+      // Centred on the joint if it fits, otherwise tight against what's in the way
+      const xmin = Math.max(below.xa, above.xa, 0), xmax = Math.min(below.xb, above.xb, wallLen);
+      const centre = Math.min(Math.max(j.x, xmin + 0.75), xmax - 0.75);
+      const centred = make(centre - 0.75, centre + 0.75);
+      const movable = m => ['Regular', 'Cripple\u2191', 'Cripple\u2193'].includes(m.type) && !m.notes.includes('sheathing');
+      const blockers = members.filter(m => clash(m, centred));
+      // Candidate spots: centred on the joint, then tight against the framing in
+      // the way (fixed framing first). A layout stud or cripple in the way can be
+      // moved onto the joint instead of adding a piece.
+      const spots = [centred];
+      for (const set of [blockers.filter(m => !movable(m)), blockers]) if (set.length) {
+        const lo = Math.min(...set.map(m => m.xa)), hi = Math.max(...set.map(m => m.xb));
+        const tight = [make(lo - 1.5, lo), make(hi, hi + 1.5)];
+        spots.push(...(sx > j.x ? tight.reverse() : tight));
+      }
+      const before = sides.reduce((t, sd) => t + sd.gaps.length, 0);
+      const stillBacked = list => best.joints.every(o => o === j || gapsFor(o, [...members, ...plates]).some(sd => sd.gaps.length)
+        || !gapsFor(o, [...list, ...plates]).some(sd => sd.gaps.length));
+      const options = spots.flatMap(c => {
+        const drop = members.filter(m => clash(m, c));
+        return drop.length ? (drop.every(movable) ? [{ c, drop }] : []) : [{ c, drop }];
+      }).sort((a, b) => (a.drop.length ? 1 : 0) - (b.drop.length ? 1 : 0) || 0);
+      // Prefer no moves at the centred spot, then moving a layout piece, then tight spots
+      options.sort((a, b) => rank(a) - rank(b));
+      function rank(o) { return (o.c === centred ? 0 : 2) + (o.drop.length ? 1 : 0); }
+      const pick = options.find(({ c, drop }) => {
+        if (c.xa < xmin - 1e-6 || c.xb > xmax + 1e-6 || c.short <= 0.25) return false;
+        const rest = members.filter(m => !drop.includes(m));
+        if (gapsFor(j, [...rest, ...plates, c]).reduce((t, sd) => t + sd.gaps.length, 0) >= before) return false;
+        return !drop.length || stillBacked([...rest, c]);
+      });
+      if (!pick) break;
+      for (const m of pick.drop) members.splice(members.indexOf(m), 1);
+      if (pick.drop.length) pick.c.notes = `${pick.drop[0].notes ? pick.drop[0].notes + ', ' : ''}moved for sheathing joint`;
+      else added++;
+      members.push(pick.c);
+    }
+    if (gapsFor(j, [...members, ...plates]).some(sd => sd.gaps.length))
+      warnings.push(`Course ${j.course} joint at ${toFtIn(layoutEnd === 'left' ? j.x : wallLen - j.x)} has no room for framing behind it. Add blocking or shift nearby framing.`);
+  }
+  params.sheath = { start: best.start, fullFirst: best.fullFirst, joints: best.joints, tried, added };
 
   // ── Display position (from layout end) ───────────────────────────────────
   const disp = x => layoutEnd === 'left' ? x : wallLen - x;
@@ -637,8 +820,15 @@ function calculate() {
   const tpLabel = topPlate === 'double' ? 'Double (3")' : 'Single (1½")';
   const plumb = topPlateThick * Math.hypot(1, pitch / 12);
   summaryHTML += `<dt>Plates</dt><dd>${tpLabel} top (${toFtIn(plumb).replace(/^0' /, '')} plumb on the ${pitch}:12 slope), single (1½") bottom &mdash; ${studSpacing}" OC studs</dd>`;
-  summaryHTML += `<dt>Layout</dt><dd>From ${layoutEnd} end, sheathing overhang ${overhang}"</dd>`;
+  const fsTxt = firstStudMode === 'custom' ? `first stud at ${toFtIn(firstStudX)}` : 'lined up with the sheet edge';
+  summaryHTML += `<dt>Layout</dt><dd>Studs from ${layoutEnd} end, ${fsTxt}</dd>`;
+  const sh = params.sheath;
+  const autoSheath = sheathStart === 'auto' || courseStart === 'auto';
+  summaryHTML += `<dt>Sheathing</dt><dd>Start from the ${sh.start} end${overhang ? ` (${overhang}" overhang)` : ''}, bottom course starts with a ${sh.fullFirst ? 'full' : 'half'} sheet`
+    + (autoSheath ? ` &mdash; best of ${sh.tried.length} options` : '')
+    + `. ${sh.added ? `${sh.added} extra piece${sh.added > 1 ? 's' : ''} of framing behind joints` : 'No extra framing needed behind joints'}.</dd>`;
   summaryHTML += `<dt>Studs</dt><dd>${count(['End', 'Regular', 'Peak'])} full + ${count(['King'])} kings + ${count(['Jack'])} jacks + ${count(['Cripple↑', 'Cripple↓'])} cripples</dd>`;
+  for (const w of warnings) summaryHTML += `<dt style="color:#c0392b">Check</dt><dd>${w}</dd>`;
   summaryHTML += '</dl>';
 
   document.getElementById('summaryContent').innerHTML = summaryHTML;
@@ -674,6 +864,6 @@ function calculate() {
 
   const resultsEl = document.getElementById('results');
   resultsEl.style.display = 'block';
-  resultsEl.scrollIntoView({ behavior: 'smooth' });
+  if (!auto) resultsEl.scrollIntoView({ behavior: 'smooth' });
 }
 </script>
