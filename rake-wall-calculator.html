@@ -187,8 +187,11 @@ small { opacity: 0.7; }
     <div class="input-row">
       <label class="row-label">Stud Spacing</label>
       <div class="radio-group">
+        <label><input type="radio" name="spacing" value="12"> 12" OC</label>
         <label><input type="radio" name="spacing" value="16" checked> 16" OC</label>
         <label><input type="radio" name="spacing" value="24"> 24" OC</label>
+        <label><input type="radio" name="spacing" value="custom"> Custom</label>
+        <input type="text" data-measure="length" class="narrow" id="spacingCustom" placeholder="19.2">
       </div>
     </div>
     <div class="input-row">
@@ -219,7 +222,7 @@ small { opacity: 0.7; }
   </div>
 
   <div class="calc-section">
-    <h3>Sheathing <small>&mdash; 4&times;8 laid flat, 4' courses, joints staggered 4'</small></h3>
+    <h3>Sheathing <small>&mdash; 4&times;8 laid flat, 4' courses, joints staggered</small></h3>
     <div class="input-row">
       <label class="row-label">Start From</label>
       <div class="radio-group">
@@ -233,7 +236,7 @@ small { opacity: 0.7; }
       <div class="radio-group">
         <label><input type="radio" name="courseStart" value="auto" checked> Auto</label>
         <label><input type="radio" name="courseStart" value="full"> Full sheet</label>
-        <label><input type="radio" name="courseStart" value="half"> Half sheet</label>
+        <label><input type="radio" name="courseStart" value="half"> Offset piece</label>
       </div>
     </div>
     <div class="input-row">
@@ -243,7 +246,7 @@ small { opacity: 0.7; }
         &nbsp;Right <input type="text" data-measure="length" id="overhangR" value="0">
       </div>
     </div>
-    <p class="hint-sm"><small>Auto tries both ends and both staggers, and picks the one that needs the least extra framing behind joints. Joints that land in a door or window need none. No seam lands in the overhang at either end.</small></p>
+    <p class="hint-sm"><small>Auto tries both ends and both staggers (and at 12" or 16" centres can shift a course by whole stud spaces), and picks the layout that needs the least extra framing and the fewest mid-course cuts. Joints that land in a door or window need none. Where sheathing overhangs an end, at least 16" of it is nailed to the wall: no seam within 16" of that end.</small></p>
   </div>
 
   <div class="calc-section">
@@ -443,6 +446,13 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('peakCustomRow').classList.toggle('hidden', r.value !== 'custom');
     })
   );
+  const spIn = document.getElementById('spacingCustom');
+  spIn.addEventListener('input', () => {
+    document.querySelector(`input[name="spacing"][value="${spIn.value.trim() ? 'custom' : '16'}"]`).checked = true;
+  });
+  document.querySelector('input[name="spacing"][value="custom"]').addEventListener('change', () => {
+    if (!spIn.value.trim()) spIn.focus();
+  });
   const fsIn = document.getElementById('firstStudIn');
   fsIn.addEventListener('input', () => {
     document.querySelector(`input[name="firstStud"][value="${fsIn.value.trim() ? 'custom' : 'auto'}"]`).checked = true;
@@ -603,7 +613,9 @@ function calculate(auto = false) {
   const pitch    = len('pitch');
   const topPlate = radio('topPlate');
   const topPlateThick = topPlate === 'double' ? 2 * PLY : PLY;
-  const studSpacing = parseInt(radio('spacing'));
+  const spacingPick = radio('spacing');
+  const studSpacing = spacingPick === 'custom' ? len('spacingCustom', NaN) : parseFloat(spacingPick);
+  const spTxt = Measure.fmtNumber(studSpacing) + '"';
   const layoutEnd = radio('layoutEnd');
   const overhangL = len('overhangL');
   const overhangR = len('overhangR');
@@ -614,6 +626,7 @@ function calculate(auto = false) {
   const courseStart = radio('courseStart');
 
   if (wallLen <= 0 || lowHt <= 0 || pitch <= 0) return fail('Enter wall length, height, and pitch.');
+  if (!(studSpacing >= 3 && studSpacing <= 48)) return fail('Enter a custom stud spacing between 3" and 48".');
   if (!(overhangL >= 0 && overhangL < 48 && overhangR >= 0 && overhangR < 48)) return fail('Sheathing overhangs must be between 0 and 48".');
   if (firstStudMode === 'custom' && !(firstStudX >= 0 && firstStudX < wallLen))
     return fail('Enter the first stud position (center, inches from the layout end).');
@@ -767,42 +780,52 @@ function calculate(auto = false) {
     return xs.some(x => Math.min(A.top.f(x), B.top.f(x)) - Math.max(A.bot.f(x), B.bot.f(x)) > 1e-3);
   };
 
-  // No seam may land in the overhang at either end (or right at the corner):
-  // the sheet there has to run past the wall end by the full overhang.
-  const jointsFor = (start, fullFirst) => {
+  // A sheet that hangs past the end of the wall needs at least 16" of it nailed to
+  // the wall, or it snaps off when the wall is stood up. So at an end with an
+  // overhang no seam may land within 16" of the wall end (or in the overhang).
+  // At an end without one, a seam just can't sit right at the corner.
+  const MIN_ON_WALL = 16;
+  const STAGGER = studSpacing * Math.max(1, Math.round(48 / studSpacing - 1e-9));
+  const courseJoints = (start, c, first, xS = 0, xF = 0) => {
     const ohS = start === 'left' ? overhangL : overhangR, ohF = start === 'left' ? overhangR : overhangL;
     const other = start === 'left' ? 'right' : 'left';
+    const needS = ohS > 0 ? MIN_ON_WALL : BEAR, needF = ohF > 0 ? MIN_ON_WALL : BEAR;
     const out = [], fixes = [], stuck = [];
-    for (let c = 0; c * 48 < maxHt; c++) {
-      const full = (c % 2 === 0) === fullFirst;      // course starts with a full 8' sheet
-      const ds = [];                                   // joints, measured from the start end
-      for (let e = full ? 96 : 48; e - ohS < wallLen + ohF - 1e-6; e += 96) ds.push(e - ohS);
-      // Seam at the start corner: make the first sheet longer
-      if (ds.length && ds[0] < BEAR) {
-        const piece = ds[0] + ohS + studSpacing, next = ds.length > 1 ? ds[1] : wallLen + ohF;
-        if (piece <= 96 + 1e-6 && ds[0] + studSpacing < next - BEAR) {
-          fixes.push({ course: c + 1, end: start, oh: ohS, piece, cut: false });
-          ds[0] += studSpacing;
-        } else stuck.push({ course: c + 1, end: start, oh: ohS });
-      }
-      // Seam in the far overhang or at the far corner: move it back onto the wall
-      const k = ds.length - 1;
-      if (k >= 0 && ds[k] > wallLen - BEAR) {
-        const prev = k > 0 ? ds[k - 1] : -ohS, moved = ds[k] - studSpacing;
-        if (moved > Math.max(prev, 0) + BEAR && moved < wallLen - BEAR && wallLen + ohF - moved <= 96 + 1e-6) {
-          fixes.push({ course: c + 1, end: other, oh: ohF, piece: moved - prev, cut: true });
-          ds[k] = moved;
-        } else stuck.push({ course: c + 1, end: other, oh: ohF });
-      }
-      for (const d of ds) {
-        if (d <= 1e-6 || d >= wallLen - 1e-6) continue;   // only seams on the wall itself
-        const x = start === 'left' ? d : wallLen - d;
-        const y0 = c * 48, y1 = Math.min(c * 48 + 48, wallTop.f(x));
-        if (y1 - y0 > 1e-3) out.push({ x, y0, y1, course: c + 1 });
-      }
+    const ds = [];                                   // seams, measured from the start end
+    for (let e = first; e - ohS < wallLen + ohF - 1e-6; e += 96) ds.push(e - ohS);
+    const movedIdx = new Set();                      // indexes of seams moved in from an end
+    // Too close to the start end: move the seam in by whole stud spaces (longer first piece)
+    const startFix = ds.length && ds[0] < needS - 1e-6;
+    if (xS && !startFix) return null;
+    if (startFix) {
+      const was = ds[0], n = Math.ceil((needS - was) / studSpacing - 1e-9) + xS, moved = was + n * studSpacing;
+      const piece = moved + ohS, next = ds.length > 1 ? ds[1] : wallLen + ohF;
+      if (piece <= 96 + 1e-6 && moved < next - needF) {
+        fixes.push({ course: c + 1, end: start, oh: ohS, was, by: n * studSpacing, piece, cut: false });
+        ds[0] = moved; movedIdx.add(0);
+      } else if (xS) return null;
+      else stuck.push({ course: c + 1, end: start, oh: ohS });
     }
-    out.fixes = fixes; out.stuck = stuck;
-    return out;
+    // Too close to the far end (or in its overhang): move the seam back by whole stud spaces
+    const k = ds.length - 1;
+    const endFix = k >= 0 && ds[k] > wallLen - needF + 1e-6;
+    if (xF && !endFix) return null;
+    if (endFix) {
+      const was = wallLen - ds[k], n = Math.ceil((needF - was) / studSpacing - 1e-9) + xF, moved = ds[k] - n * studSpacing;
+      const prev = k > 0 ? ds[k - 1] : -ohS;
+      if (moved > Math.max(prev, 0) + BEAR && (k > 0 || moved >= needS - 1e-6) && wallLen + ohF - moved <= 96 + 1e-6) {
+        fixes.push({ course: c + 1, end: other, oh: ohF, was, by: n * studSpacing, piece: moved - prev, cut: true });
+        ds[k] = moved; movedIdx.add(k);
+      } else if (xF) return null;
+      else stuck.push({ course: c + 1, end: other, oh: ohF });
+    }
+    ds.forEach((d, i) => {
+      if (d <= 1e-6 || d >= wallLen - 1e-6) return;     // only seams on the wall itself
+      const x = start === 'left' ? d : wallLen - d;
+      const y0 = c * 48, y1 = Math.min(c * 48 + 48, wallTop.f(x));
+      if (y1 - y0 > 1e-3) out.push({ x, y0, y1, course: c + 1, moved: movedIdx.has(i) });
+    });
+    return { joints: out, fixes, stuck, extra: xS + xF };
   };
   // Heights on line x (a nail line beside a joint) that have sheathing on them
   const needAt = (x, y0, y1) => {
@@ -823,20 +846,79 @@ function calculate(auto = false) {
   const unbacked = (joints, framing) => joints.map(j => ({ j, sides: gapsFor(j, framing) }))
     .filter(r => r.sides.some(sd => sd.gaps.length));
 
+  // Courses normally alternate: a full sheet, then an offset piece (STAGGER).
+  // At 12" and 16" centres any course may instead start with a piece cut to any
+  // whole number of stud spaces, so its seams still land on studs. Pick each
+  // course's start to need the fewest extra studs, then the fewest mid-course
+  // cuts, then the fewest departures from the usual stagger. Seams in courses
+  // next to each other are always at least 32" apart.
+  const MIN_STAGGER = 32;
+  const AT_24 = Math.abs(studSpacing - 24) < 1e-9;
+  const allowed = (p, q) => (AT_24 && (p.moved || q.moved) ? 24 : MIN_STAGGER);
+  // Closest pair of seams between two courses that's under what it's allowed (Infinity if none)
+  const closest = (a, b) => {
+    let m = Infinity;
+    for (const p of a.joints) for (const q of b.joints) {
+      const d = Math.abs(p.x - q.x);
+      if (d < allowed(p, q) - 1e-6) m = Math.min(m, d);
+    }
+    return m;
+  };
+  const SHIFTABLE = [12, 16].some(v => Math.abs(studSpacing - v) < 1e-9);
+  const nCourses = Math.max(1, Math.ceil(maxHt / 48 - 1e-9));
+  const firsts = SHIFTABLE ? Array.from({ length: Math.round(96 / studSpacing) }, (_, i) => i === 0 ? 96 : i * studSpacing) : [96, STAGGER];
   const starts = sheathStart === 'auto' ? [layoutEnd, layoutEnd === 'left' ? 'right' : 'left'] : [sheathStart];
-  const fulls = courseStart === 'auto' ? [true, false] : [courseStart === 'full'];
+  const patterns = courseStart === 'auto' ? [true, false] : [courseStart === 'full'];
   const framing0 = [...members, ...plates];
+  const gapLen = bad => bad.reduce((t, r) => t + r.sides.reduce((u, sd) => u + sd.gaps.reduce((v, [a, b]) => v + b - a, 0), 0), 0);
+  const add = (a, b) => a.map((v, i) => v + b[i]);
+  const less = (a, b) => { for (let i = 0; i < a.length; i++) if (Math.abs(a[i] - b[i]) > 1e-6) return a[i] < b[i]; return false; };
   let best = null;
   const tried = [];
-  for (const st of starts) for (const ff of fulls) {
-    const joints = jointsFor(st, ff);
-    const bad = unbacked(joints, framing0);
-    const len = bad.reduce((t, r) => t + r.sides.reduce((u, sd) => u + sd.gaps.reduce((v, [a, b]) => v + b - a, 0), 0), 0);
-    const opt = { start: st, fullFirst: ff, joints, bad, len, fixes: joints.fixes, stuck: joints.stuck };
-    tried.push(opt);
-    const key = o => [o.stuck.length, o.bad.length, o.fixes.length, o.len];
-    const better = (a, b) => { const ka = key(a), kb = key(b); for (let i = 0; i < ka.length; i++) if (Math.abs(ka[i] - kb[i]) > 1e-6) return ka[i] < kb[i]; return false; };
-    if (!best || better(opt, best)) best = opt;
+  for (const st of starts) {
+    // Every course with every possible start, scored once
+    const evals = [];
+    const XK = Math.ceil(MIN_STAGGER / studSpacing) + 1;   // extra stud spaces worth trying on a move
+    for (let c = 0; c < nCourses; c++) {
+      const list = [];
+      for (const f of firsts) for (let xS = 0; xS <= XK; xS++) for (let xF = 0; xF <= XK; xF++) {
+        const ev = courseJoints(st, c, f, xS, xF);
+        if (!ev) { if (xF === 0) break; continue; }
+        const bad = unbacked(ev.joints, framing0);
+        list.push({ first: f, ...ev, bad, score: [0, ev.stuck.length, bad.length, ev.fixes.length, 0, ev.extra, gapLen(bad)] });
+      }
+      evals.push(list);
+    }
+    for (const fullFirst of patterns) {
+      const usual = c => ((c % 2 === 0) === fullFirst ? 96 : STAGGER);
+      // Shortest path through the courses; neighbours may not share a start
+      const dev = (e, c) => [0, 0, 0, 0, e.first === usual(c) ? 0 : 1, 0, 0];
+      let row = evals[0].map((e, i) => (courseStart !== 'auto' && e.first !== usual(0)) ? null
+        : { cost: add(e.score, dev(e, 0)), path: [i] });
+      for (let c = 1; c < nCourses; c++) {
+        row = evals[c].map((e, i) => {
+          // Neighbours never start alike; seams closer than 32" count against the layout
+          // ahead of everything else, so they only happen where nothing avoids them
+          let pick = null;
+          row.forEach((r, k) => {
+            if (!r || evals[c - 1][k].first === e.first) return;
+            const near = closest(evals[c - 1][k], e) < Infinity ? 1 : 0;
+            const cost = add(r.cost, [near, 0, 0, 0, 0, 0, 0]);
+            if (!pick || less(cost, pick.cost)) pick = { cost, path: r.path };
+          });
+          return pick && { cost: add(pick.cost, add(e.score, dev(e, c))), path: [...pick.path, i] };
+        });
+      }
+      const end = row.filter(Boolean).reduce((a, b) => (!a || less(b.cost, a.cost) ? b : a), null);
+      if (!end) continue;
+      const picks = end.path.map((i, c) => evals[c][i]);
+      const close = picks.slice(1).map((e, c) => ({ course: c + 2, gap: closest(picks[c], e) })).filter(g => g.gap < Infinity);
+      const opt = { start: st, fullFirst, firsts: picks.map(e => e.first), shifted: end.cost[4],
+        joints: picks.flatMap(e => e.joints), bad: picks.flatMap(e => e.bad), fixes: picks.flatMap(e => e.fixes),
+        stuck: picks.flatMap(e => e.stuck), len: end.cost[6], close, cost: end.cost };
+      tried.push(opt);
+      if (!best || less(opt.cost, best.cost)) best = opt;
+    }
   }
 
   // Add framing behind any joint that still needs it
@@ -895,8 +977,10 @@ function calculate(auto = false) {
       warnings.push(`Course ${j.course} joint at ${toFtIn(layoutEnd === 'left' ? j.x : wallLen - j.x)} has no room for framing behind it. Add blocking or shift nearby framing.`);
   }
   for (const st of best.stuck)
-    warnings.push(`Course ${st.course} has a seam in the ${st.end} overhang and the wall is too short to move it. Rip that course to suit.`);
-  params.sheath = { start: best.start, fullFirst: best.fullFirst, joints: best.joints, tried, added, fixes: best.fixes };
+    warnings.push(`Course ${st.course} has a seam within 16" of the ${st.end} end (or in its overhang) and the wall is too short to move it. Rip that course to suit.`);
+  for (const g of best.close)
+    warnings.push(`Seams in courses ${g.course - 1} and ${g.course} are only ${toFtIn(g.gap).replace(/^0' /, '')} apart (less than 32"). The wall is too short or too oddly sized to avoid it.`);
+  params.sheath = { start: best.start, fullFirst: best.fullFirst, joints: best.joints, tried, added, fixes: best.fixes, stagger: STAGGER, firsts: best.firsts, shifted: best.shifted };
 
   // ── Display position (from layout end) ───────────────────────────────────
   const disp = x => layoutEnd === 'left' ? x : wallLen - x;
@@ -924,7 +1008,7 @@ function calculate(auto = false) {
   }
   const tpLabel = topPlate === 'double' ? 'Double (3")' : 'Single (1½")';
   const plumb = topPlateThick * Math.hypot(1, pitch / 12);
-  summaryHTML += `<dt>Plates</dt><dd>${tpLabel} top (${toFtIn(plumb).replace(/^0' /, '')} plumb on the ${pitch}:12 slope), single (1½") bottom &mdash; ${studSpacing}" OC studs</dd>`;
+  summaryHTML += `<dt>Plates</dt><dd>${tpLabel} top (${toFtIn(plumb).replace(/^0' /, '')} plumb on the ${pitch}:12 slope), single (1½") bottom &mdash; ${spTxt} OC studs</dd>`;
   const fsTxt = firstStudMode === 'custom' ? `first stud at ${toFtIn(firstStudX)}` : 'lined up with the sheet edge';
   summaryHTML += `<dt>Layout</dt><dd>Studs from ${layoutEnd} end, ${fsTxt}</dd>`;
   const sh = params.sheath;
@@ -932,13 +1016,16 @@ function calculate(auto = false) {
   const ohStart = sh.start === 'left' ? overhangL : overhangR, ohEnd = sh.start === 'left' ? overhangR : overhangL;
   const inch = v => toFtIn(v).replace(/^0' /, '');
   const ohTxt = ohStart || ohEnd ? ` (overhang ${inch(ohStart)} at the start, ${inch(ohEnd)} at the far end)` : '';
-  summaryHTML += `<dt>Sheathing</dt><dd>Start from the ${sh.start} end${ohTxt}, bottom course starts with a ${sh.fullFirst ? 'full' : 'half'} sheet`
+  summaryHTML += `<dt>Sheathing</dt><dd>Start from the ${sh.start} end${ohTxt}, ${sh.shifted ? 'some courses shifted by whole stud spaces to save studs or mid-course cuts' : `bottom course starts with a ${sh.fullFirst ? 'full sheet' : `${toFtIn(sh.stagger).replace(/^0' /, '')} offset piece`}, joints staggered ${toFtIn(sh.stagger).replace(/^0' /, '')}`}`
     + (autoSheath ? ` &mdash; best of ${sh.tried.length} options` : '')
     + `. ${sh.added ? `${sh.added} extra piece${sh.added > 1 ? 's' : ''} of framing behind joints` : 'No extra framing needed behind joints'}.</dd>`;
+  if (sh.shifted) summaryHTML += `<dt>Courses</dt><dd>Start each course (bottom up) with: ${sh.firsts.map((f, c) => `${c + 1}) ${f >= 96 ? 'full sheet' : inch(f) + ' piece'}`).join(', ')}</dd>`;
   for (const fx of sh.fixes) {
     const piece = toFtIn(fx.piece).replace(/^0' /, '');
-    const where = fx.oh ? `in the ${inch(fx.oh)} ${fx.end} overhang` : `at the ${fx.end} corner`;
-    summaryHTML += `<dt>Course ${fx.course}</dt><dd>Seam would land ${where}, so it moves in ${studSpacing}": ${fx.cut ? `cut the last full sheet to ${piece}` : `start with a ${piece} piece`}.</dd>`;
+    const where = !fx.oh ? `right at the ${fx.end} corner`
+      : fx.was <= 0 ? `in the ${inch(fx.oh)} ${fx.end} overhang`
+      : `only ${inch(fx.was)} in from the ${fx.end} end, too little to hold the ${inch(fx.oh)} overhang (needs 16")`;
+    summaryHTML += `<dt>Course ${fx.course}</dt><dd>Seam would land ${where}, so it moves in ${inch(fx.by)}: ${fx.cut ? `cut the last full sheet to ${piece}` : `start with a ${piece} piece`}.</dd>`;
   }
   summaryHTML += `<dt>Studs</dt><dd>${count(['End', 'Regular', 'Peak'])} full + ${count(['King'])} kings + ${count(['Jack'])} jacks + ${count(['Cripple↑', 'Cripple↓'])} cripples</dd>`;
   for (const w of warnings) summaryHTML += `<dt style="color:#c0392b">Check</dt><dd>${w}</dd>`;
