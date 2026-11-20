@@ -8,8 +8,8 @@
  *   data-measure="number"  a plain number:     4 | 4.5 | 4 1/2 | 9/16 | 4½
  *
  * Each box gets an "= …" note showing what was read, and turns red when it can't be
- * read. Optional (?keys=float or ?keys=inline in the address): the phone's number pad
- * plus a row of keys for ' " / space and -. Results can be shown in the style the user typed: inches (49 13/16"),
+ * read. Phones get the number pad plus a row of keys for ' " / space and -
+ * (?keys=inline for chunky keys under the box, ?keys=off for the normal keyboard). Results can be shown in the style the user typed: inches (49 13/16"),
  * feet and inches (4' 1 13/16"), or feet-inches-sixteenths (4-1-13).
  */
 (function () {
@@ -218,13 +218,14 @@
     { label: '-', text: '-', kinds: ['length'], title: 'hyphen' },
   ];
   let bar = null, target = null, valueAtFocus = '', usedBar = false;
-  // Off by default: boxes use the phone's normal keyboard. Add ?keys=float to the
-  // address for the number pad with iPhone-style keys above it, or ?keys=inline
-  // for the number pad with chunky keys under the box.
-  const KEY_PARAM = new URLSearchParams(location.search).get('keys') || document.documentElement.dataset.measureKeys || 'off';
+  // Default: the phone's number pad with phone-style keys floating just above it
+  // (they drop in under the box if the keyboard's position isn't reported).
+  // ?keys=inline: chunky keys under the box.  ?keys=off: the normal keyboard.
+  // Computers with a real keyboard get nothing extra.
+  const touch = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+  const KEY_PARAM = new URLSearchParams(location.search).get('keys') || document.documentElement.dataset.measureKeys || (touch ? 'float' : 'off');
   let KEY_STYLE = KEY_PARAM === 'float' ? 'float' : KEY_PARAM === 'inline' ? 'inline' : 'off';
   let focusedAt = 0;
-  const touch = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
 
   function insert(text) {
     const el = target;
