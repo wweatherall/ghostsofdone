@@ -142,25 +142,36 @@
     return (PARSERS[el.dataset.measure] || parseNumber)(v);
   }
 
+  // Each box sits in a small wrapper (with its unit label, if any). The "= …" note
+  // hangs just under the box in space reserved for it, so it never moves anything.
+  function fieldFor(el) {
+    if (el.parentElement && el.parentElement.classList.contains('m-field')) return el.parentElement;
+    const f = document.createElement('span');
+    f.className = 'm-field';
+    el.insertAdjacentElement('beforebegin', f);
+    const unit = el.nextElementSibling;
+    f.appendChild(el);
+    if (unit && unit.tagName === 'SPAN' && !unit.className) f.appendChild(unit);
+    return f;
+  }
   function echoFor(el) {
-    let e = el.nextElementSibling;
-    if (e && e.classList.contains('m-echo')) return e;
-    // Keep a unit label (ft, in, : 12) beside its box; put the note after it
-    if (e && e.tagName === 'SPAN' && !e.className && e.nextElementSibling && e.nextElementSibling.classList.contains('m-echo'))
-      return e.nextElementSibling;
-    e = document.createElement('span');
-    e.className = 'm-echo';
-    const after = el.nextElementSibling && el.nextElementSibling.tagName === 'SPAN' && !el.nextElementSibling.className
-      ? el.nextElementSibling : el;
-    after.insertAdjacentElement('afterend', e);
+    const f = fieldFor(el);
+    let e = f.querySelector(':scope > .m-echo');
+    if (!e) {
+      e = document.createElement('span');
+      e.className = 'm-echo';
+      f.appendChild(e);
+    }
     return e;
   }
 
-  // Update one box's note and red state
-  function check(el) {
+  // Update one box's note and red state. While typing (live), something half
+  // written like "5 1/" just clears the note; it only turns red once you leave the box.
+  function check(el, live) {
     const v = el.value.trim();
     const n = v ? read(el) : NaN;
-    const bad = !!v && isNaN(n);
+    let bad = !!v && isNaN(n);
+    if (bad && live) { el.classList.remove('m-bad'); const e = echoFor(el); e.classList.remove('m-bad'); e.textContent = ''; return; }
     el.classList.toggle('m-bad', bad);
     const echo = echoFor(el);
     echo.classList.toggle('m-bad', bad);
@@ -191,6 +202,9 @@
   }
 
   document.addEventListener('input', e => {
+    if (e.target && e.target.matches && e.target.matches('input[data-measure]')) check(e.target, true);
+  });
+  document.addEventListener('focusout', e => {
     if (e.target && e.target.matches && e.target.matches('input[data-measure]')) check(e.target);
   });
 
@@ -252,8 +266,9 @@
   function placeBar() {
     if (!target || !bar) return;
     if (KEY_STYLE === 'inline') {
-      echoFor(target).insertAdjacentElement('afterend', bar);
-      target.parentElement.classList.add('m-wrap');
+      const f = fieldFor(target);
+      f.insertAdjacentElement('afterend', bar);
+      f.parentElement.classList.add('m-wrap');
       return;
     }
     // Float: pin to the bottom of the visible area, which is just above the keyboard.
@@ -301,8 +316,13 @@
   const css = document.createElement('style');
   css.textContent = `
 input[data-measure].m-bad { border-color: #c0392b !important; outline: 1px solid #c0392b; }
-.m-echo { font-size: 0.78rem; opacity: 0.7; margin-left: 0.35rem; white-space: nowrap; }
+.m-field { position: relative; display: inline-flex; align-items: center; gap: 0.3rem; }
+.m-echo { position: absolute; left: 2px; top: calc(100% + 2px); font-size: 0.72rem; line-height: 1;
+  opacity: 0.7; white-space: nowrap; pointer-events: none; }
 .m-echo.m-bad { color: #c0392b; opacity: 1; }
+/* Room under each row of boxes for its note, always there so nothing shifts */
+.input-row:has(.m-field) { margin-bottom: 1.15rem; }
+.calc-group:has(.m-field) { margin-bottom: 1.6rem; }
 .m-bar[hidden], .m-bar button[hidden] { display: none !important; }
 .m-bar button { touch-action: manipulation; cursor: pointer; line-height: 1; margin: 0; }
 /* Inline: the site's chunky buttons, on their own line under the box */
