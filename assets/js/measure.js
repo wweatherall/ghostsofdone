@@ -69,7 +69,14 @@
       s = s.slice(fi + 1).trim().replace(/^-/, '');
       if (!s.replace('"', '').trim()) return feet * 12;
     }
-    const inches = parseNumber(s.replace(/"$/, '').trim());
+    const rest = s.replace(/"$/, '').trim();
+    // A fraction written after the inch mark belongs to the inches: 5" 4/5, 12' 5"1/2
+    const split = rest.match(/^(\d+(?:\.\d+)?)\s*"\s*(\d+\s*\/\s*\d+)$/);
+    if (split) {
+      const frac = parseNumber(split[2]);
+      return frac < 1 ? feet * 12 + parseFloat(split[1]) + frac : NaN;
+    }
+    const inches = parseNumber(rest);
     return isNaN(inches) ? NaN : feet * 12 + inches;
   }
 
