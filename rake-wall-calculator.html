@@ -3,6 +3,8 @@ layout: default
 title: Rake Wall Calculator
 ---
 
+<script src="{{ site.baseurl }}/assets/js/measure.js"></script>
+
 <style>
 .calculator { max-width: 720px; }
 .calc-section {
@@ -29,18 +31,19 @@ title: Rake Wall Calculator
   font-size: 0.88rem;
 }
 .ft-in { display: flex; align-items: center; gap: 0.3rem; font-size: 0.88rem; }
-input[type="number"] {
-  width: 54px;
+input[data-measure] {
+  width: 96px;
   padding: 0.28rem 0.3rem;
   border: 1px solid var(--navColour);
   border-radius: 4px;
   background: var(--backgroundColour);
   color: inherit;
   font-size: 0.88rem;
-  text-align: right;
 }
-input[type="number"].narrow { width: 44px; }
-input[type="number"].wide { width: 70px; }
+input[data-measure].narrow { width: 64px; }
+input[data-measure].wide { width: 96px; }
+#pitch, #overhangL, #overhangR { width: 64px; }
+.ft-in { flex-wrap: wrap; }
 .radio-group { display: flex; gap: 0.8rem; flex-wrap: wrap; }
 .radio-group label {
   display: flex; align-items: center; gap: 0.25rem;
@@ -54,31 +57,24 @@ select {
   color: inherit;
   font-size: 0.88rem;
 }
-.btn-calc {
-  display: inline-block;
-  padding: 0.5rem 1.5rem;
-  border: 1px solid var(--navColour);
-  border-radius: 4px;
-  background: transparent;
-  color: inherit;
-  font-size: 0.95rem;
+.btn-calc, .btn-sm {
+  background: var(--backgroundColour);
+  color: var(--navColour);
+  border: solid 2px var(--navColour);
+  border-radius: 5px;
+  padding: 0.35em 1.5em;
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: bold;
   cursor: pointer;
-  box-shadow: 2px 2px 0 var(--navColour);
-  transition: transform 0.05s, box-shadow 0.05s;
+  filter: drop-shadow(3px 3px var(--navColour));
   margin-top: 0.5rem;
 }
-.btn-calc:active { transform: translate(2px,2px); box-shadow: none; }
-.btn-sm {
-  padding: 0.22rem 0.6rem;
-  border: 1px solid var(--navColour);
-  border-radius: 4px;
-  background: transparent;
-  color: inherit;
-  font-size: 0.8rem;
-  cursor: pointer;
-  box-shadow: 1px 1px 0 var(--navColour);
+.btn-sm { padding: 0.25em 0.9em; font-size: 0.9rem; margin-top: 0; }
+.btn-calc:active, .btn-sm:active {
+  filter: drop-shadow(1px 1px var(--navColour));
+  transform: translate(2px, 2px);
 }
-.btn-sm:active { transform: translate(1px,1px); box-shadow: none; }
 .opening-item {
   border: 1px solid var(--navColour);
   border-radius: 5px;
@@ -118,12 +114,27 @@ select {
 .stud-table td.pos-col { text-align: right; font-variant-numeric: tabular-nums; }
 .stud-table td.len-col { text-align: right; font-variant-numeric: tabular-nums; }
 small { opacity: 0.7; }
+
+/* Small sketch of the wall shape inside the size frame */
+.dim-sketch { margin: 0 0 0.6rem 0; }
+.dim-sketch svg { display: block; width: 100%; height: 64px; }
+.dim-sketch .lp-empty { font-size: 0.8rem; opacity: 0.6; margin: 0.3rem 0; text-align: center; }
+@media (min-width: 700px) {
+  .dim-sketch { float: right; width: 23%; max-width: 155px; margin: 0 0 0.5rem 1rem; }
+  .dim-sketch svg { height: 87px; }
+}
+.calc-section::after { content: ''; display: block; clear: both; }
+.lp-empty { font-size: 0.85rem; opacity: 0.7; margin: 0.6rem 0; text-align: center; }
 </style>
 
 <div class="calculator">
 
+  <p class="hint-sm measure-hint"><small>Any box takes 5 1/2, 5.5, 1'5 1/2" or 7-5-8 (feet-inches-sixteenths). Plain numbers are inches.</small></p>
+
+
   <div class="calc-section">
     <h3>Wall Configuration</h3>
+    <div class="dim-sketch" id="livePreview"></div>
 
     <div class="input-row">
       <label class="row-label">Wall Type</label>
@@ -136,23 +147,21 @@ small { opacity: 0.7; }
     <div class="input-row">
       <label class="row-label">Wall Length</label>
       <div class="ft-in">
-        <input type="number" id="wallLenFt" min="0" value="12" inputmode="numeric"> ft
-        <input type="number" id="wallLenIn" min="0" max="11.9375" step="0.0625" value="0" inputmode="decimal"> in
+        <input type="text" data-measure="length" id="wallLen" value="12'">
       </div>
     </div>
 
     <div class="input-row">
       <label class="row-label">Low-End Height <small>(to top of plate)</small></label>
       <div class="ft-in">
-        <input type="number" id="lowHtFt" min="0" value="8" inputmode="numeric"> ft
-        <input type="number" id="lowHtIn" min="0" max="11.9375" step="0.0625" value="0" inputmode="decimal"> in
+        <input type="text" data-measure="length" id="lowHt" value="8'">
       </div>
     </div>
 
     <div class="input-row">
       <label class="row-label">Pitch (left side)</label>
       <div class="ft-in">
-        <input type="number" id="pitch" min="0.1" step="0.25" value="4" inputmode="decimal"> : 12
+        <input type="text" data-measure="pitch" id="pitch" value="4"><span>: 12</span>
       </div>
     </div>
 
@@ -167,8 +176,7 @@ small { opacity: 0.7; }
       <div id="peakCustomRow" class="input-row hidden">
         <label class="row-label">Peak from Left End</label>
         <div class="ft-in">
-          <input type="number" id="peakFt" min="0" value="6" inputmode="numeric"> ft
-          <input type="number" id="peakIn" min="0" max="11.9375" step="0.0625" value="0" inputmode="decimal"> in
+          <input type="text" data-measure="length" id="peak" value="6'">
         </div>
       </div>
     </div>
@@ -204,7 +212,7 @@ small { opacity: 0.7; }
         <label><input type="radio" name="firstStud" value="custom"> Custom</label>
       </div>
       <div class="ft-in">
-        <input type="number" class="wide" id="firstStudIn" min="0" step="0.0625" inputmode="decimal" placeholder="e.g. 16"> in
+        <input type="text" data-measure="length" class="wide" id="firstStudIn" placeholder="e.g. 16">
       </div>
     </div>
     <p class="hint-sm"><small>Auto lines the studs up with the sheet edge at the layout end. Use Custom for an engineered layout.</small></p>
@@ -229,12 +237,13 @@ small { opacity: 0.7; }
       </div>
     </div>
     <div class="input-row">
-      <label class="row-label">Overhang <small>(past the start end)</small></label>
+      <label class="row-label">Overhang <small>(past each end)</small></label>
       <div class="ft-in">
-        <input type="number" id="overhang" min="0" max="47.9375" step="0.0625" value="0" inputmode="decimal"> in
+        Left <input type="text" data-measure="length" id="overhangL" value="0">
+        &nbsp;Right <input type="text" data-measure="length" id="overhangR" value="0">
       </div>
     </div>
-    <p class="hint-sm"><small>Auto tries both ends and both staggers, and picks the one that needs the least extra framing behind joints. Joints that land in a door or window need none.</small></p>
+    <p class="hint-sm"><small>Auto tries both ends and both staggers, and picks the one that needs the least extra framing behind joints. Joints that land in a door or window need none. No seam lands in the overhang at either end.</small></p>
   </div>
 
   <div class="calc-section">
@@ -243,6 +252,15 @@ small { opacity: 0.7; }
     <button class="btn-sm" onclick="addOpening()">+ Add Opening</button>
   </div>
 
+  <div class="input-row units-row">
+    <label class="row-label">Show lengths as</label>
+    <div class="radio-group">
+      <label><input type="radio" name="units" value="auto" checked> As entered</label>
+      <label><input type="radio" name="units" value="in"> Inches</label>
+      <label><input type="radio" name="units" value="ftin"> Ft &amp; in</label>
+      <label><input type="radio" name="units" value="dash"> 7-5-8</label>
+    </div>
+  </div>
   <div id="errorMsg" class="error-msg"></div>
   <button class="btn-calc" onclick="calculate()">Calculate</button>
 
@@ -273,22 +291,13 @@ let openingCount = 0;
 function radio(name) {
   return document.querySelector(`input[name="${name}"]:checked`)?.value;
 }
-function ftInEl(ftId, inId) {
-  return (parseFloat(document.getElementById(ftId).value) || 0) * 12
-       + (parseFloat(document.getElementById(inId).value) || 0);
-}
+// Boxes are read by the shared measure.js. Blank reads as 0 here.
+const len = (id, blank = 0) => Measure.read(id, blank);
 
-function toFtIn(totalInches) {
-  if (totalInches < 0) return '—';
-  const f = Math.floor(totalInches * 16 + 1e-6) / 16;
-  const ft = Math.floor(f / 12);
-  const rem = f - ft * 12;
-  const wi = Math.floor(rem);
-  const fn = Math.round((rem - wi) * 16);
-  if (fn === 0) return `${ft}' ${wi}"`;
-  const g = gcd(fn, 16);
-  return `${ft}' ${wi} ${fn/g}/${16/g}"`;
-}
+
+// Results follow the style the wall length was typed in (or the "Show lengths as" choice)
+let OUT_STYLE = 'ftin';
+function toFtIn(totalInches) { return Measure.fmtLength(totalInches, 'floor', OUT_STYLE); }
 function gcd(a, b) { return b === 0 ? a : gcd(b, a % b); }
 
 // ── Wall geometry ────────────────────────────────────────────────────────────
@@ -361,22 +370,19 @@ function addOpening() {
     <div class="input-row">
       <label class="row-label">Left Edge of RO from Left</label>
       <div class="ft-in">
-        <input type="number" id="opX${id}Ft" min="0" value="3" inputmode="numeric"> ft
-        <input type="number" id="opX${id}In" min="0" max="11.9375" step="0.0625" value="0" inputmode="decimal"> in
+        <input type="text" data-measure="length" id="opX${id}" value="3'">
       </div>
     </div>
     <div class="input-row">
       <label class="row-label">RO Width</label>
       <div class="ft-in">
-        <input type="number" id="opW${id}Ft" min="0" value="3" inputmode="numeric"> ft
-        <input type="number" id="opW${id}In" min="0" max="11.9375" step="0.0625" value="0" inputmode="decimal"> in
+        <input type="text" data-measure="length" id="opW${id}" value="3'">
       </div>
     </div>
     <div class="input-row">
       <label class="row-label">RO Height <small>(raked: at left edge)</small></label>
       <div class="ft-in">
-        <input type="number" id="opH${id}Ft" min="0" value="4" inputmode="numeric"> ft
-        <input type="number" id="opH${id}In" min="0" max="11.9375" step="0.0625" value="0" inputmode="decimal"> in
+        <input type="text" data-measure="length" id="opH${id}" value="4'">
       </div>
     </div>
     <div class="input-row">
@@ -390,7 +396,7 @@ function addOpening() {
         <option value="custom">Custom</option>
       </select>
       <span id="opHdrCustomWrap${id}" class="hidden ft-in">
-        <input type="number" class="wide" id="opHdrCustom${id}" min="1" step="0.0625" value="7.25" inputmode="decimal"> in
+        <input type="text" data-measure="length" class="wide" id="opHdrCustom${id}" value="7 1/4">
       </span>
     </div>
     <div class="input-row">
@@ -403,16 +409,18 @@ function addOpening() {
     <div class="input-row" id="opSillRow${id}">
       <label class="row-label">Sill Height <small>(RO bottom from subfloor)</small></label>
       <div class="ft-in">
-        <input type="number" id="opSill${id}Ft" min="0" value="2" inputmode="numeric"> ft
-        <input type="number" id="opSill${id}In" min="0" max="11.9375" step="0.0625" value="0" inputmode="decimal"> in
+        <input type="text" data-measure="length" id="opSill${id}" value="2'">
       </div>
     </div>`;
   document.getElementById('openingsList').appendChild(div);
+  Measure.init(div);
+  if (typeof livePreview === 'function' && document.readyState !== 'loading') livePreview();
   calculate(true);
 }
 
 function removeOpening(id) {
   document.getElementById(`op-${id}`)?.remove();
+  livePreview();
   calculate(true);
 }
 
@@ -441,6 +449,12 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   // Recalculate whenever a box is finished with or a choice changes
   document.querySelector('.calculator').addEventListener('change', () => calculate(true));
+  // Redraw the live sketch on every keystroke
+  const calcEl = document.querySelector('.calculator');
+  Measure.init(calcEl);
+  calcEl.addEventListener('input', livePreview);
+  calcEl.addEventListener('change', livePreview);
+  livePreview();
 });
 
 // ── SVG wall preview ─────────────────────────────────────────────────────────
@@ -510,10 +524,69 @@ function generateWallSVG(members, openings, p) {
 </style><g transform="${tx}">${e.join('')}</g></svg>`;
 }
 
+
+// ── Live sketch of the shape: redraws as you type ───────────────────────────
+// shapes: [{pts:[[x,y]...], cls, closed}] in inches, y up from 0
+function sketchSVG(xmin, xmax, ymax, shapes) {
+  const span = Math.max(xmax - xmin, ymax), pad = span / 30;
+  const f = n => n.toFixed(2), Y = y => ymax - y;
+  let out = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${f(xmin - pad)} ${f(-pad)} ${f(xmax - xmin + 2 * pad)} ${f(ymax + 2 * pad)}" preserveAspectRatio="xMidYMid meet"><style>
+.sk-wall{fill:var(--navColour);fill-opacity:.12;stroke:var(--navColour);stroke-width:${f(span / 150)}}
+.sk-ro{fill:var(--backgroundColour);stroke:var(--navColour);stroke-width:${f(span / 250)}}
+.sk-hdr{fill:var(--navColour);fill-opacity:.6;stroke:none}
+.sk-bad{fill:#c0392b;fill-opacity:.25;stroke:#c0392b;stroke-width:${f(span / 200)}}
+</style>`;
+  for (const s of shapes) {
+    const d = s.pts.map(([x, y], i) => `${i ? 'L' : 'M'}${f(x)},${f(Y(y))}`).join('') + 'Z';
+    out += `<path class="${s.cls}" d="${d}"/>`;
+  }
+  return out + '</svg>';
+}
+
+function livePreview() {
+  const el = document.getElementById('livePreview');
+  const W = len('wallLen'), low = len('lowHt');
+  const pitch = len('pitch');
+  if (!(W > 0 && low > 0)) { el.innerHTML = '<p class="lp-empty">Enter length and height to see the wall</p>'; return; }
+  const type = radio('wallType');
+  let peakX = W / 2;
+  if (type === 'gable' && radio('peakPos') === 'custom') { const v = len('peak'); if (v > 0 && v < W) peakX = v; }
+  const rightPitch = type === 'gable' ? peakX * pitch / (W - peakX) : pitch;
+  const topAt = x => type === 'shed' ? low + x * pitch / 12
+    : Math.min(low + x * pitch / 12, low + (W - x) * rightPitch / 12);
+  const topPts = type === 'shed' ? [[W, topAt(W)], [0, low]] : [[W, low], [peakX, topAt(peakX)], [0, low]];
+  const maxH = Math.max(...topPts.map(p => p[1]));
+  const shapes = [{ pts: [[0, 0], [W, 0], ...topPts], cls: 'sk-wall' }];
+
+  // Openings: rough opening, header, and a red flag if it won't fit
+  document.querySelectorAll('.opening-item').forEach(item => {
+    const id = parseInt(item.id.replace('op-', ''));
+    const t = document.querySelector(`input[name="opType${id}"]:checked`)?.value;
+    const x1 = len(`opX${id}`), w = len(`opW${id}`), h = len(`opH${id}`);
+    if (!(w > 0 && h > 0)) return;
+    const rob = t === 'door' ? 0 : len(`opSill${id}`);
+    const sz = document.getElementById(`opHdrSz${id}`)?.value;
+    const hd = sz === 'custom' ? len(`opHdrCustom${id}`) : (HEADER_DEPTHS[sz] || 7.25);
+    const raked = document.querySelector(`input[name="opHStyle${id}"]:checked`)?.value === 'raked';
+    const x2 = x1 + w, hx1 = x1 - 1.5, hx2 = x2 + 1.5;
+    const m = raked ? (type === 'shed' ? pitch / 12 : ((hx1 + hx2) / 2 < peakX ? pitch / 12 : -rightPitch / 12)) : 0;
+    const hb = x => rob + h + m * (x - x1), htp = x => hb(x) + hd * Math.hypot(1, m);
+    const plate = (document.querySelector('input[name="topPlate"]:checked')?.value === 'double' ? 3 : 1.5);
+    const fits = x1 - 3 >= 1.5 && x2 + 3 <= W - 1.5
+      && [hx1, hx2, ...(type === 'gable' && hx1 < peakX && hx2 > peakX ? [peakX] : [])].every(x => htp(x) <= topAt(x) - plate * Math.hypot(1, pitch / 12) + 1e-6);
+    shapes.push({ pts: [[hx1, hb(hx1)], [hx2, hb(hx2)], [hx2, htp(hx2)], [hx1, htp(hx1)]], cls: fits ? 'sk-hdr' : 'sk-bad' });
+    shapes.push({ pts: [[x1, rob], [x2, rob], [x2, hb(x2)], [x1, hb(x1)]], cls: fits ? 'sk-ro' : 'sk-bad' });
+  });
+
+  el.innerHTML = sketchSVG(0, W, maxH, shapes);
+}
+
 // ── Main calculation ─────────────────────────────────────────────────────────
 // auto = triggered by editing a field: don't scroll, and don't nag about
 // errors until the first successful calculation.
 function calculate(auto = false) {
+  const unitPref = radio('units') || 'auto';
+  OUT_STYLE = unitPref === 'auto' ? Measure.styleOf(document.getElementById('wallLen').value) : unitPref;
   const errEl = document.getElementById('errorMsg');
   errEl.textContent = '';
   const fail = msg => {
@@ -521,22 +594,27 @@ function calculate(auto = false) {
     errEl.textContent = msg; document.getElementById('results').style.display = 'none';
   };
 
+  const unreadable = Measure.firstBad(document.querySelector('.calculator'));
+  if (unreadable) return fail(`Can't read "${unreadable.value}". Use a number like 5 1/2 or 5.5.`);
+
   const wallType = radio('wallType');
-  const wallLen  = ftInEl('wallLenFt', 'wallLenIn');
-  const lowHt    = ftInEl('lowHtFt', 'lowHtIn');
-  const pitch    = parseFloat(document.getElementById('pitch').value) || 0;
+  const wallLen  = len('wallLen');
+  const lowHt    = len('lowHt');
+  const pitch    = len('pitch');
   const topPlate = radio('topPlate');
   const topPlateThick = topPlate === 'double' ? 2 * PLY : PLY;
   const studSpacing = parseInt(radio('spacing'));
   const layoutEnd = radio('layoutEnd');
-  const overhang  = parseFloat(document.getElementById('overhang').value) || 0;
+  const overhangL = len('overhangL');
+  const overhangR = len('overhangR');
+  const overhang  = layoutEnd === 'left' ? overhangL : overhangR;   // at the layout end
   const firstStudMode = radio('firstStud');
-  const firstStudX = parseFloat(document.getElementById('firstStudIn').value);
+  const firstStudX = document.getElementById('firstStudIn').value.trim() ? len('firstStudIn') : NaN;
   const sheathStart = radio('sheathStart');
   const courseStart = radio('courseStart');
 
   if (wallLen <= 0 || lowHt <= 0 || pitch <= 0) return fail('Enter wall length, height, and pitch.');
-  if (overhang < 0 || overhang >= 48) return fail('Sheathing overhang must be between 0 and 48".');
+  if (!(overhangL >= 0 && overhangL < 48 && overhangR >= 0 && overhangR < 48)) return fail('Sheathing overhangs must be between 0 and 48".');
   if (firstStudMode === 'custom' && !(firstStudX >= 0 && firstStudX < wallLen))
     return fail('Enter the first stud position (center, inches from the layout end).');
 
@@ -544,13 +622,13 @@ function calculate(auto = false) {
   let rightPitch = pitch;
   if (wallType === 'gable') {
     if (radio('peakPos') === 'custom') {
-      peakX = ftInEl('peakFt', 'peakIn');
+      peakX = len('peak');
       if (peakX <= 0 || peakX >= wallLen) return fail('Peak must be between 0 and wall length.');
     }
     rightPitch = peakX * pitch / (wallLen - peakX);
   }
 
-  const params = { wallType, wallLen, lowHt, pitch, peakX, rightPitch, topPlateThick, studSpacing, layoutEnd, overhang };
+  const params = { wallType, wallLen, lowHt, pitch, peakX, rightPitch, topPlateThick, studSpacing, layoutEnd, overhang, overhangL, overhangR };
   const U = plateSurface(params, topPlateThick); // underside of the top plate
   const BOT = flat(BP);                           // top of the bottom plate
 
@@ -565,17 +643,17 @@ function calculate(auto = false) {
   document.querySelectorAll('.opening-item').forEach(el => {
     const id = parseInt(el.id.replace('op-', ''));
     const type = document.querySelector(`input[name="opType${id}"]:checked`)?.value;
-    const x1   = ftInEl(`opX${id}Ft`, `opX${id}In`);
-    const roW  = ftInEl(`opW${id}Ft`, `opW${id}In`);
-    const roH  = ftInEl(`opH${id}Ft`, `opH${id}In`);
+    const x1   = len(`opX${id}`);
+    const roW  = len(`opW${id}`);
+    const roH  = len(`opH${id}`);
     const x2   = x1 + roW;
     const hdrSzKey = document.getElementById(`opHdrSz${id}`)?.value;
     const headerDepth = hdrSzKey === 'custom'
-      ? parseFloat(document.getElementById(`opHdrCustom${id}`)?.value) || 0
+      ? len(`opHdrCustom${id}`)
       : HEADER_DEPTHS[hdrSzKey] || 7.25;
     const headerStyle = document.querySelector(`input[name="opHStyle${id}"]:checked`)?.value;
     // RO heights are measured from the subfloor. Door jacks stand on the bottom plate.
-    const rob = type === 'window' ? ftInEl(`opSill${id}Ft`, `opSill${id}In`) : 0;
+    const rob = type === 'window' ? len(`opSill${id}`) : 0;
 
     if (roW <= 0 || roH <= 0) { opError ||= `Opening ${id} needs a valid width and height.`; return; }
     if (x1 - 3 < 1.5 - 1e-6 || x2 + 3 > wallLen - 1.5 + 1e-6)
@@ -689,18 +767,41 @@ function calculate(auto = false) {
     return xs.some(x => Math.min(A.top.f(x), B.top.f(x)) - Math.max(A.bot.f(x), B.bot.f(x)) > 1e-3);
   };
 
+  // No seam may land in the overhang at either end (or right at the corner):
+  // the sheet there has to run past the wall end by the full overhang.
   const jointsFor = (start, fullFirst) => {
-    const out = [];
+    const ohS = start === 'left' ? overhangL : overhangR, ohF = start === 'left' ? overhangR : overhangL;
+    const other = start === 'left' ? 'right' : 'left';
+    const out = [], fixes = [], stuck = [];
     for (let c = 0; c * 48 < maxHt; c++) {
       const full = (c % 2 === 0) === fullFirst;      // course starts with a full 8' sheet
-      for (let e = full ? 96 : 48; e - overhang < wallLen; e += 96) {
-        const d = e - overhang;
-        if (d <= 1e-6) continue;
+      const ds = [];                                   // joints, measured from the start end
+      for (let e = full ? 96 : 48; e - ohS < wallLen + ohF - 1e-6; e += 96) ds.push(e - ohS);
+      // Seam at the start corner: make the first sheet longer
+      if (ds.length && ds[0] < BEAR) {
+        const piece = ds[0] + ohS + studSpacing, next = ds.length > 1 ? ds[1] : wallLen + ohF;
+        if (piece <= 96 + 1e-6 && ds[0] + studSpacing < next - BEAR) {
+          fixes.push({ course: c + 1, end: start, oh: ohS, piece, cut: false });
+          ds[0] += studSpacing;
+        } else stuck.push({ course: c + 1, end: start, oh: ohS });
+      }
+      // Seam in the far overhang or at the far corner: move it back onto the wall
+      const k = ds.length - 1;
+      if (k >= 0 && ds[k] > wallLen - BEAR) {
+        const prev = k > 0 ? ds[k - 1] : -ohS, moved = ds[k] - studSpacing;
+        if (moved > Math.max(prev, 0) + BEAR && moved < wallLen - BEAR && wallLen + ohF - moved <= 96 + 1e-6) {
+          fixes.push({ course: c + 1, end: other, oh: ohF, piece: moved - prev, cut: true });
+          ds[k] = moved;
+        } else stuck.push({ course: c + 1, end: other, oh: ohF });
+      }
+      for (const d of ds) {
+        if (d <= 1e-6 || d >= wallLen - 1e-6) continue;   // only seams on the wall itself
         const x = start === 'left' ? d : wallLen - d;
         const y0 = c * 48, y1 = Math.min(c * 48 + 48, wallTop.f(x));
         if (y1 - y0 > 1e-3) out.push({ x, y0, y1, course: c + 1 });
       }
     }
+    out.fixes = fixes; out.stuck = stuck;
     return out;
   };
   // Heights on line x (a nail line beside a joint) that have sheathing on them
@@ -731,9 +832,11 @@ function calculate(auto = false) {
     const joints = jointsFor(st, ff);
     const bad = unbacked(joints, framing0);
     const len = bad.reduce((t, r) => t + r.sides.reduce((u, sd) => u + sd.gaps.reduce((v, [a, b]) => v + b - a, 0), 0), 0);
-    const opt = { start: st, fullFirst: ff, joints, bad, len };
+    const opt = { start: st, fullFirst: ff, joints, bad, len, fixes: joints.fixes, stuck: joints.stuck };
     tried.push(opt);
-    if (!best || bad.length < best.bad.length || (bad.length === best.bad.length && len < best.len - 1e-6)) best = opt;
+    const key = o => [o.stuck.length, o.bad.length, o.fixes.length, o.len];
+    const better = (a, b) => { const ka = key(a), kb = key(b); for (let i = 0; i < ka.length; i++) if (Math.abs(ka[i] - kb[i]) > 1e-6) return ka[i] < kb[i]; return false; };
+    if (!best || better(opt, best)) best = opt;
   }
 
   // Add framing behind any joint that still needs it
@@ -791,7 +894,9 @@ function calculate(auto = false) {
     if (gapsFor(j, [...members, ...plates]).some(sd => sd.gaps.length))
       warnings.push(`Course ${j.course} joint at ${toFtIn(layoutEnd === 'left' ? j.x : wallLen - j.x)} has no room for framing behind it. Add blocking or shift nearby framing.`);
   }
-  params.sheath = { start: best.start, fullFirst: best.fullFirst, joints: best.joints, tried, added };
+  for (const st of best.stuck)
+    warnings.push(`Course ${st.course} has a seam in the ${st.end} overhang and the wall is too short to move it. Rip that course to suit.`);
+  params.sheath = { start: best.start, fullFirst: best.fullFirst, joints: best.joints, tried, added, fixes: best.fixes };
 
   // ── Display position (from layout end) ───────────────────────────────────
   const disp = x => layoutEnd === 'left' ? x : wallLen - x;
@@ -824,9 +929,17 @@ function calculate(auto = false) {
   summaryHTML += `<dt>Layout</dt><dd>Studs from ${layoutEnd} end, ${fsTxt}</dd>`;
   const sh = params.sheath;
   const autoSheath = sheathStart === 'auto' || courseStart === 'auto';
-  summaryHTML += `<dt>Sheathing</dt><dd>Start from the ${sh.start} end${overhang ? ` (${overhang}" overhang)` : ''}, bottom course starts with a ${sh.fullFirst ? 'full' : 'half'} sheet`
+  const ohStart = sh.start === 'left' ? overhangL : overhangR, ohEnd = sh.start === 'left' ? overhangR : overhangL;
+  const inch = v => toFtIn(v).replace(/^0' /, '');
+  const ohTxt = ohStart || ohEnd ? ` (overhang ${inch(ohStart)} at the start, ${inch(ohEnd)} at the far end)` : '';
+  summaryHTML += `<dt>Sheathing</dt><dd>Start from the ${sh.start} end${ohTxt}, bottom course starts with a ${sh.fullFirst ? 'full' : 'half'} sheet`
     + (autoSheath ? ` &mdash; best of ${sh.tried.length} options` : '')
     + `. ${sh.added ? `${sh.added} extra piece${sh.added > 1 ? 's' : ''} of framing behind joints` : 'No extra framing needed behind joints'}.</dd>`;
+  for (const fx of sh.fixes) {
+    const piece = toFtIn(fx.piece).replace(/^0' /, '');
+    const where = fx.oh ? `in the ${inch(fx.oh)} ${fx.end} overhang` : `at the ${fx.end} corner`;
+    summaryHTML += `<dt>Course ${fx.course}</dt><dd>Seam would land ${where}, so it moves in ${studSpacing}": ${fx.cut ? `cut the last full sheet to ${piece}` : `start with a ${piece} piece`}.</dd>`;
+  }
   summaryHTML += `<dt>Studs</dt><dd>${count(['End', 'Regular', 'Peak'])} full + ${count(['King'])} kings + ${count(['Jack'])} jacks + ${count(['Cripple↑', 'Cripple↓'])} cripples</dd>`;
   for (const w of warnings) summaryHTML += `<dt style="color:#c0392b">Check</dt><dd>${w}</dd>`;
   summaryHTML += '</dl>';

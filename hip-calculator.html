@@ -3,26 +3,26 @@ title: Hip Calculator
 layout: default
 ---
 
+<script src="{{ site.baseurl }}/assets/js/measure.js"></script>
+
 <article>
 <h1>Hip Rafter Calculator</h1>
 <p id="calcDesc">For a square hip roof. Enter the run (wall plate to ridge center) and pitch.</p>
 
 <div class="calc-wrap">
+  <p class="calc-hint">Any box takes 5 1/2, 5.5, 1'5 1/2" or 7-5-8 (feet-inches-sixteenths). Plain numbers are inches.</p>
 
   <div class="calc-group">
     <label>Run</label>
     <div class="input-row">
-      <input type="number" id="runFt" min="0" step="1" placeholder="ft" inputmode="numeric">
-      <span>ft</span>
-      <input type="number" id="runIn" min="0" max="11.875" step="0.125" placeholder="in" inputmode="decimal">
-      <span>in</span>
+      <input type="text" data-measure="length" id="run" placeholder="e.g. 12' 6">
     </div>
   </div>
 
   <div class="calc-group">
     <label id="pitchLabel">Pitch (rise per 12")</label>
     <div class="input-row">
-      <input type="number" id="pitch" min="0" step="0.25" placeholder="e.g. 6" inputmode="decimal">
+      <input type="text" data-measure="pitch" id="pitch" placeholder="e.g. 6">
       <span>: 12</span>
     </div>
   </div>
@@ -30,7 +30,7 @@ layout: default
   <div class="calc-group" id="pitch2Group" hidden>
     <label>End Pitch (rise per 12")</label>
     <div class="input-row">
-      <input type="number" id="pitch2" min="0" step="0.25" placeholder="e.g. 4" inputmode="decimal">
+      <input type="text" data-measure="pitch" id="pitch2" placeholder="e.g. 4">
       <span>: 12</span>
     </div>
   </div>
@@ -42,6 +42,16 @@ layout: default
     </label>
   </div>
 
+  <div class="calc-group">
+    <label>Show lengths as</label>
+    <div class="input-row units">
+      <label><input type="radio" name="units" value="auto" checked> As entered</label>
+      <label><input type="radio" name="units" value="in"> Inches</label>
+      <label><input type="radio" name="units" value="ftin"> Ft &amp; in</label>
+      <label><input type="radio" name="units" value="dash"> 7-5-8</label>
+    </div>
+  </div>
+  <p id="calcError" class="calc-error" hidden></p>
   <button onclick="calcHip()">Calculate</button>
 
 </div>
@@ -97,8 +107,8 @@ layout: default
 .input-row span {
   color: var(--textColour);
 }
-input[type="number"] {
-  width: 5em;
+input[type="number"], input[data-measure] {
+  width: 7em;
   background: var(--backgroundColour);
   color: var(--textColour);
   border: 1px solid var(--navColour);
@@ -142,6 +152,10 @@ button:active {
   text-align: right;
   font-weight: bold;
 }
+.calc-group .units { flex-wrap: wrap; gap: 0.3em 0.9em; }
+.calc-group .units label { display: inline-flex; align-items: center; gap: 0.25em; font-weight: normal; margin: 0; }
+.calc-error { color: #c0392b; font-size: 0.9em; }
+.calc-hint { font-size: 0.85em; opacity: 0.75; }
 </style>
 
 <script>
@@ -158,18 +172,23 @@ function toggleMixed() {
 }
 
 function calcHip() {
-  const ft    = parseFloat(document.getElementById('runFt').value) || 0;
-  const ins   = parseFloat(document.getElementById('runIn').value) || 0;
-  const p1    = parseFloat(document.getElementById('pitch').value);
+  const err = document.getElementById('calcError');
+  err.hidden = true;
+  const fail = msg => { err.textContent = msg; err.hidden = false; document.getElementById('hipResults').hidden = true; };
+  const bad = Measure.firstBad(document.querySelector('.calc-wrap'));
+  if (bad) return fail(`Can't read "${bad.value}". Use a number like 5 1/2 or 5.5.`);
+
+  const p1    = Measure.read('pitch');
   const mixed = document.getElementById('mixedPitch').checked;
-  const p2    = mixed ? parseFloat(document.getElementById('pitch2').value) : p1;
+  const p2    = mixed ? Measure.read('pitch2') : p1;
+  const run   = Measure.read('run') / 12;   // feet
 
-  const run = ft + ins / 12;
+  if (!(run > 0) || !(p1 > 0) || !(p2 > 0)) return fail('Enter the run and pitch.');
 
-  if (run <= 0 || isNaN(p1) || p1 <= 0 || isNaN(p2) || p2 <= 0) {
-    alert('Please enter valid values.');
-    return;
-  }
+  // Lengths show in the style the run was typed in, unless chosen otherwise
+  const pref = document.querySelector('input[name="units"]:checked')?.value || 'auto';
+  const style = pref === 'auto' ? Measure.styleOf(document.getElementById('run').value) : pref;
+  const toFtIn = feet => Measure.fmtLength(feet * 12, 'floor', style);
 
   const rise = run * p1 / 12;
 
@@ -191,7 +210,7 @@ function calcHip() {
   // Hip rise/run in X/17 framing-square format:
   // unit run = how far the hip travels horizontally per 12" of building run
   const hipUnitRun  = (hipPlanRun / run) * 12; // ≈ 16.97 for equal pitch
-  const hipRiseRun  = `${p1} / ${hipUnitRun.toFixed(2)}`;
+  const hipRiseRun  = `${Measure.fmtNumber(p1)} / ${hipUnitRun.toFixed(2)}`;
 
   // Bevel angles for the cheek cut at the ridge.
   // Equal pitch: both faces = arctan(p1/p2) = arctan(1) = 45°
@@ -209,7 +228,7 @@ function calcHip() {
     document.getElementById('rEnd').textContent   = toFtIn(endLen);
     document.getElementById('aEnd').textContent   = endAngle.toFixed(2) + '°';
     document.getElementById('aBevel').textContent = `${sideCut1.toFixed(2)}° / ${sideCut2.toFixed(2)}°`;
-    document.getElementById('bevelLabel').textContent = `Side Cut (${p1}:12 / ${p2}:12)`;
+    document.getElementById('bevelLabel').textContent = `Side Cut (${Measure.fmtNumber(p1)}:12 / ${Measure.fmtNumber(p2)}:12)`;
     document.getElementById('rEndRow').hidden = false;
     document.getElementById('aEndRow').hidden = false;
   } else {
@@ -222,21 +241,10 @@ function calcHip() {
   document.getElementById('hipResults').hidden = false;
 }
 
-// Floor to nearest 1/16"
-function toFtIn(feet) {
-  const totalIn   = feet * 12;
-  const floored   = Math.floor(totalIn * 16) / 16;
-  const ft        = Math.floor(floored / 12);
-  const rem       = floored - ft * 12;
-  const whole     = Math.floor(rem);
-  const sixteenths = Math.round((rem - whole) * 16);
-
-  const fracMap = [
-    '', '¹⁄₁₆', '⅛', '³⁄₁₆', '¼', '⁵⁄₁₆', '⅜', '⁷⁄₁₆',
-    '½', '⁹⁄₁₆', '⅝', '¹¹⁄₁₆', '¾', '¹³⁄₁₆', '⅞', '¹⁵⁄₁₆'
-  ];
-
-  const frac = sixteenths > 0 ? ' ' + fracMap[sixteenths] : '';
-  return `${ft}' ${whole}${frac}"`;
-}
+document.addEventListener('DOMContentLoaded', () => {
+  Measure.init(document.querySelector('.calc-wrap'));
+  document.querySelectorAll('input[name="units"]').forEach(r => r.addEventListener('change', () => {
+    if (!document.getElementById('hipResults').hidden) calcHip();
+  }));
+});
 </script>
